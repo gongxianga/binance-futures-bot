@@ -826,7 +826,10 @@ async function loadLog() {
   box.innerHTML=r.log.map(l=>'<div class="log-entry"><span class="ts">['+l.ts+']</span><span class="'+l.level+'">'+l.msg+'</span></div>').join('');
   box.scrollTop=box.scrollHeight;
 }
-function clearLog() { document.getElementById('log-box').innerHTML=''; }
+async function clearLog() {
+  await fetch('/api/log/clear', {method:'POST'}).catch(()=>{});
+  document.getElementById('log-box').innerHTML='';
+}
 let toastTimer;
 function toast(msg,type) {
   const el=document.getElementById('toast');

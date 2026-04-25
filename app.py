@@ -867,6 +867,14 @@ def api_log():
         return jsonify({"log": state["log"][:50]})
 
 
+@app.route("/api/log/clear", methods=["POST"])
+@login_required
+def api_log_clear():
+    with _lock:
+        state["log"] = []
+    return jsonify({"ok": True})
+
+
 @app.route("/api/status")
 @login_required
 def api_status():
