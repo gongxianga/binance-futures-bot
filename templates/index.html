@@ -3,312 +3,569 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Binance Futures Bot v4.0</title>
+<title>币安合约交易 v4.0</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
 :root {
-  --bg:#f0f4f8; --bg2:#ffffff; --bg3:#f5f7fa; --bg4:#eef1f6;
-  --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
-  --accent:#6366f1; --accent2:#818cf8;
-  --green:#10b981; --red:#ef4444; --yellow:#f59e0b;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
-  --shadow-md:0 4px 24px rgba(99,102,241,.12);
+  --bg:      #f0f2f5;
+  --bg2:     #ffffff;
+  --bg3:     #f5f6fa;
+  --bg4:     #eef0f6;
+  --text:    #1a1d2e;
+  --muted:   #8b8fa8;
+  --border:  #e2e5f1;
+  --accent:  #4f6ef7;
+  --accent2: #7c3aed;
+  --green:   #10b981;
+  --red:     #ef4444;
+  --yellow:  #f59e0b;
+  --cyan:    #06b6d4;
+  --shadow:  0 2px 16px rgba(79,110,247,.08);
+  --shadow2: 0 4px 32px rgba(79,110,247,.14);
+  --grad:    linear-gradient(135deg, #4f6ef7, #7c3aed);
+  --grad2:   linear-gradient(135deg, #10b981, #06b6d4);
+  --grad3:   linear-gradient(135deg, #ef4444, #f59e0b);
 }
-@media(prefers-color-scheme:dark){:root{
-  --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --bg4:#1c2128;
-  --text:#e6edf3; --muted:#7d8590; --border:#30363d;
-  --accent:#7c6aff; --accent2:#a78bfa;
-  --green:#3fb950; --red:#f85149; --yellow:#d29922;
-  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
-  --shadow-md:0 4px 24px rgba(124,106,255,.15);
+@media (prefers-color-scheme: dark) { :root {
+  --bg:     #0f1117; --bg2: #161b27; --bg3: #1e2435; --bg4: #242a3a;
+  --text:   #e8eaf6; --muted: #6b7280; --border: #2d3452;
+  --accent: #6175f7; --accent2: #9061f9;
+  --green:  #10d98b; --red: #f87171; --yellow: #fbbf24; --cyan: #22d3ee;
+  --shadow: 0 2px 16px rgba(0,0,0,.3); --shadow2: 0 4px 32px rgba(0,0,0,.5);
 }}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ── Header ── */
-.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:12px;height:52px;flex-shrink:0;box-shadow:var(--shadow)}
-.hdr-logo{font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;letter-spacing:.5px}
-.hdr-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
-.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
-.inp{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s}
-.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
-.chk{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap}
-.conn-dot{font-size:11px;white-space:nowrap;padding:3px 8px;border-radius:12px;background:var(--bg3)}
-.conn-dot.ok{color:var(--green);background:rgba(16,185,129,.1)}
-.conn-dot.err{color:var(--red);background:rgba(239,68,68,.08)}
-.user-badge{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-/* ── Buttons ── */
-.btn{border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn:hover{filter:brightness(1.08)} .btn:active{filter:brightness(.95)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.3)}
-.btn-long{background:linear-gradient(135deg,#059669,var(--green));color:#fff;box-shadow:0 2px 8px rgba(16,185,129,.25)}
-.btn-short{background:linear-gradient(135deg,#dc2626,var(--red));color:#fff;box-shadow:0 2px 8px rgba(239,68,68,.25)}
-.btn-ghost{background:var(--bg3);border:1px solid var(--border);color:var(--text)}
-.btn-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:var(--yellow)}
-.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red)}
-.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
-.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Body Layout ── */
-.body{display:flex;flex-direction:row;padding:8px;gap:0;flex:1;overflow:hidden;min-height:0}
-.panel-left{width:420px;min-width:200px;display:flex;flex-direction:column;flex-shrink:0;gap:0}
-.panel-mid{flex:1;min-width:280px;display:flex;flex-direction:column;overflow:hidden;gap:0}
-.panel-right{width:260px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column}
-.resizer-col{width:8px;cursor:col-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.resizer-col::after{content:'';width:3px;height:36px;background:var(--border);border-radius:2px;transition:all .2s}
-.resizer-col:hover::after,.resizer-col.dragging::after{background:var(--accent);height:60px}
-.resizer-row{height:8px;cursor:row-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.resizer-row::after{content:'';height:3px;width:36px;background:var(--border);border-radius:2px;transition:all .2s}
-.resizer-row:hover::after,.resizer-row.dragging::after{background:var(--accent);width:60px}
+/* Header */
+.hdr {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+  z-index: 10;
+}
+.hdr-logo { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--grad);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(79,110,247,.35);
+  flex-shrink: 0;
+}
+.hdr-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.hdr-sub   { font-size: 11px; color: var(--muted); }
+.hdr-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.inp {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 11px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  transition: all .2s;
+}
+.inp:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px rgba(79,110,247,.12); }
+.chk { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.status { font-size: 12px; white-space: nowrap; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+.status.ok  { color: var(--green); background: rgba(16,185,129,.12); }
+.status.err { color: var(--red); background: rgba(239,68,68,.10); }
+.user-tag {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px;
+}
+.user-avatar {
+  width: 20px; height: 20px; background: var(--grad);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #fff; font-weight: 700;
+}
 
-/* ── Cards ── */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
-.card-hdr{padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.5px}
-.card-hdr .title{color:var(--text);font-size:12px;text-transform:none;letter-spacing:0}
+/* Body */
+.body {
+  display: flex; flex-direction: row;
+  padding: 10px; gap: 0;
+  flex: 1; overflow: hidden; min-height: 0;
+}
 
-/* ── Left Panel ── */
-.left-card{flex:1;display:flex;flex-direction:column;min-height:0}
-.left-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px;background:var(--bg2);flex-shrink:0}
-.ltab{padding:8px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.ltab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.ltab:hover:not(.active){color:var(--text)}
-.left-panel-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
-#radar-chart{flex:1;min-height:0}
-.scan-panel{flex:1;overflow-y:auto;padding:12px}
+/* Panels */
+.panel-left  { width: 300px; min-width: 220px; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; }
+.panel-main  { flex: 1; min-width: 400px; display: flex; flex-direction: column; overflow: hidden; }
+.panel-right { width: 260px; min-width: 180px; flex-shrink: 0; display: flex; flex-direction: column; }
 
-/* ── Scan ── */
-.scan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
-.scan-field label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.form-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;outline:none;width:100%;transition:border-color .15s}
-.form-inp:focus{border-color:var(--accent)}
-select.form-inp{cursor:pointer}
-.mode-row{display:flex;gap:12px;align-items:center;margin-bottom:10px;font-size:12px;color:var(--muted)}
-.mode-row label{display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text)}
-.scan-ctrl{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.scan-badge{font-size:11px;color:var(--muted);padding:3px 8px;background:var(--bg3);border-radius:10px;white-space:nowrap}
-.prog-wrap{margin-bottom:8px;display:none}
-.prog-info{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px}
-.prog-bar{background:var(--bg3);border-radius:4px;height:5px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .3s}
-.scan-sep{border:none;border-top:1px solid var(--border);margin:10px 0}
+/* Resizers */
+.resizer-col {
+  width: 10px; cursor: col-resize; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.resizer-col::after {
+  content: ''; width: 3px; height: 48px;
+  background: var(--border); border-radius: 2px; transition: all .2s;
+}
+.resizer-col:hover::after, .resizer-col.dragging::after { background: var(--accent); height: 64px; }
+.resizer-row {
+  height: 10px; cursor: row-resize; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.resizer-row::after {
+  content: ''; height: 3px; width: 48px;
+  background: var(--border); border-radius: 2px; transition: all .2s;
+}
+.resizer-row:hover::after, .resizer-row.dragging::after { background: var(--accent); width: 64px; }
 
-/* ── Right panel (trade) ── */
-.right-card{flex:1;display:flex;flex-direction:column;min-height:0}
-.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 10px;flex-shrink:0}
-.tab{padding:8px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-body{flex:1;overflow-y:auto;padding:14px}
-.tab-panel{display:none}.tab-panel.active{display:block}
+/* Cards */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.card-hdr {
+  padding: 11px 16px;
+  font-size: 11px; font-weight: 700;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  letter-spacing: .5px; text-transform: uppercase;
+  background: var(--bg3);
+}
+.card-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.card-dot.green  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+.card-dot.cyan   { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan); }
+.card-dot.muted  { background: var(--muted);  box-shadow: none; animation: none; }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .55; transform: scale(.75); }
+}
+.card-hdr-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* ── Account ── */
-.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.acc-item{background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
-.acc-item label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.acc-item .val{font-size:15px;font-weight:700;color:var(--green)}
-.acc-item .val.neg{color:var(--red)}
+/* Account chips */
+.acc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 14px 8px; }
+.acc-chip {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+}
+.acc-chip label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; letter-spacing: .3px; text-transform: uppercase; }
+.acc-chip .val { font-size: 15px; font-weight: 700; color: var(--green); }
+.acc-chip .val.neg     { color: var(--red); }
+.acc-chip .val.neutral { color: var(--text); }
 
-/* ── Form ── */
-.form-grid{display:grid;grid-template-columns:70px 1fr;gap:7px 10px;align-items:center;margin-bottom:12px}
-.form-grid label{font-size:11px;color:var(--muted);text-align:right;font-weight:500}
-.sym-row{display:flex;gap:6px;align-items:center}
-.cur-price{font-size:11px;color:var(--yellow);font-weight:700;min-width:60px}
+/* Form */
+.form-section { padding: 12px 14px; }
+.form-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.form-row label { font-size: 11px; color: var(--muted); width: 64px; text-align: right; flex-shrink: 0; }
+.form-inp {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 10px; color: var(--text);
+  font-size: 12px; outline: none; transition: all .2s;
+}
+.form-inp:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px rgba(79,110,247,.10); }
+select.form-inp { cursor: pointer; }
+.sym-row { flex: 1; display: flex; gap: 6px; align-items: center; }
+.cur-price { font-size: 18px; font-weight: 700; color: var(--yellow); text-align: center; margin: -2px 0 10px; }
 
-/* ── Positions ── */
-.pos-card{height:180px;flex-shrink:0;overflow:hidden}
-.pos-card .tbl-scroll{overflow-y:auto;height:calc(100% - 36px)}
+/* Buttons */
+.btn {
+  border: none; border-radius: 8px; padding: 7px 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .18s; white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+.btn:active { transform: translateY(0); opacity: .85; }
+.btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-long    { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.3); }
+.btn-short   { background: var(--red);   color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,.3); }
+.btn-primary { background: var(--grad);  color: #fff; box-shadow: 0 2px 8px rgba(79,110,247,.3); }
+.btn-ghost   { background: var(--bg3);   color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg4); }
+.btn-warn    { background: rgba(245,158,11,.12); color: var(--yellow); border: 1px solid rgba(245,158,11,.25); }
+.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+.sep { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 
-/* ── Log ── */
-.log-card{flex:1;display:flex;flex-direction:column;min-height:0}
-.log-box{font-family:'Consolas','SF Mono',monospace;font-size:11px;overflow-y:auto;padding:8px 12px;flex:1;line-height:1.6}
-.log-ok{color:var(--green)} .log-err{color:var(--red)} .log-warn{color:var(--yellow)} .log-info{color:var(--muted)}
-.log-entry{margin-bottom:1px;display:flex;gap:8px}
-.log-ts{color:var(--border);flex-shrink:0}
+/* Main split: radar left, scanner right */
+.main-top {
+  flex: 1; display: flex; flex-direction: row; gap: 0;
+  overflow: hidden; min-height: 0;
+}
+.radar-card {
+  width: 44%; min-width: 260px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+.scanner-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ── Tables ── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{background:var(--bg3);padding:7px 8px;text-align:center;font-weight:700;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
-td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--bg3)}
-.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .muted{color:var(--muted)} .accent{color:var(--accent)}
-.s1{color:var(--yellow)} .s2{color:var(--yellow)} .s3{color:#fb923c} .s4{color:var(--red)}
+/* Radar */
+.radar-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+#radar-chart { width: 100%; height: 100%; }
 
-/* ── Toast ── */
-#toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px;box-shadow:var(--shadow-md);display:none;z-index:999;max-width:280px;animation:slideUp .2s ease}
-@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Animated radar rings */
+.radar-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(79,110,247,.2);
+  pointer-events: none;
+  animation: ring-expand 4s ease-out infinite;
+}
+.radar-ring:nth-child(1) { width: 30%; padding-top: 30%; top: 35%; left: 35%; animation-delay: 0s; }
+.radar-ring:nth-child(2) { width: 55%; padding-top: 55%; top: 22.5%; left: 22.5%; animation-delay: 1.3s; border-color: rgba(79,110,247,.12); }
+.radar-ring:nth-child(3) { width: 80%; padding-top: 80%; top: 10%; left: 10%; animation-delay: 2.6s; border-color: rgba(79,110,247,.06); }
+@keyframes ring-expand {
+  0%   { opacity: .8; transform: scale(.9); }
+  100% { opacity: 0;  transform: scale(1.1); }
+}
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+/* Sweep animation */
+.scan-sweep {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 340deg, rgba(79,110,247,.18) 360deg);
+  border-radius: 0;
+  animation: sweep 3.5s linear infinite;
+  display: none; pointer-events: none;
+}
+.scan-sweep.active { display: block; }
+@keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-.sep{border:none;border-top:1px solid var(--border);margin:10px 0}
-.tag-long{background:rgba(16,185,129,.12);color:var(--green);padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
-.tag-short{background:rgba(239,68,68,.12);color:var(--red);padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+/* Scanner settings */
+.scan-settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.scan-field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+.scan-ctrl { display: flex; gap: 8px; align-items: center; }
+.countdown { font-size: 11px; color: var(--muted); }
+.progress-wrap { flex: 1; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.progress-bar-bg { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; height: 5px; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--grad); border-radius: 4px; width: 0%; transition: width .3s; }
 
-/* ── Radar scan animation ── */
-@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
-.scanning-label{animation:pulse 1.2s infinite}
+/* Signal cards */
+.signal-grid { display: flex; flex-direction: column; gap: 6px; }
+.signal-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px;
+  transition: all .2s;
+}
+.signal-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(79,110,247,.12); transform: translateX(2px); }
+.signal-card.long  { border-left: 3px solid var(--green); }
+.signal-card.short { border-left: 3px solid var(--red); }
+.sig-sym { font-size: 13px; font-weight: 700; color: var(--text); min-width: 76px; }
+.sig-dir { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+.sig-dir.long  { background: rgba(16,185,129,.12); color: var(--green); }
+.sig-dir.short { background: rgba(239,68,68,.10);  color: var(--red); }
+.sig-stars { color: var(--yellow); font-size: 12px; letter-spacing: -1px; }
+.sig-price { font-size: 12px; color: var(--muted); margin-left: auto; }
+.sig-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
+.sig-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bg4); color: var(--muted); border: 1px solid var(--border); }
+.sig-tag.up { background: rgba(16,185,129,.10);  color: var(--green); border-color: rgba(16,185,129,.2); }
+.sig-tag.dn { background: rgba(239,68,68,.08);   color: var(--red);   border-color: rgba(239,68,68,.18); }
+.sig-trade  { flex-shrink: 0; }
+.empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 12px; }
+.empty-icon  { font-size: 32px; margin-bottom: 8px; opacity: .4; }
+
+/* Positions */
+.positions-card { flex-shrink: 0; height: 170px; overflow: hidden; }
+.positions-card .tbl-wrap { overflow-y: auto; height: calc(100% - 40px); }
+
+/* Tables */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th {
+  background: var(--bg3); padding: 7px 10px;
+  text-align: center; font-weight: 700; color: var(--muted);
+  white-space: nowrap; border-bottom: 1px solid var(--border);
+  font-size: 10px; letter-spacing: .3px; text-transform: uppercase;
+}
+td { padding: 7px 10px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:hover td { background: var(--bg3); }
+.green  { color: var(--green); }
+.red    { color: var(--red); }
+.yellow { color: var(--yellow); }
+.muted  { color: var(--muted); }
+.accent { color: var(--accent); font-weight: 600; }
+
+/* Log */
+.log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.log-box {
+  font-family: 'Consolas', 'SF Mono', monospace; font-size: 11px;
+  overflow-y: auto; padding: 10px 14px; flex: 1; line-height: 1.65;
+}
+.log-entry { margin-bottom: 1px; }
+.ts { color: var(--border); margin-right: 6px; font-size: 10px; }
+.log-box .ok   { color: var(--green); }
+.log-box .err  { color: var(--red); }
+.log-box .warn { color: var(--yellow); }
+.log-box .info { color: var(--muted); }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px; font-size: 13px;
+  box-shadow: var(--shadow2); display: none; z-index: 999;
+  max-width: 300px; animation: slideUp .2s ease;
+}
+@keyframes slideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>
 </head>
 <body>
 
 <!-- Header -->
 <div class="hdr">
-  <div class="hdr-logo">⚡ BINANCE FUTURES BOT</div>
-  <div class="hdr-sep"></div>
-  <input class="inp" id="inp-key"    type="password" placeholder="API Key"    style="width:140px">
-  <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:140px">
+  <div class="hdr-logo">
+    <div class="logo-icon">&#9889;</div>
+    <div>
+      <div class="hdr-title">Binance Futures Bot</div>
+      <div class="hdr-sub">v4.0 &middot; 合约量化交易</div>
+    </div>
+  </div>
+
+  <div class="hdr-divider"></div>
+
+  <input class="inp" id="inp-key"    type="password" placeholder="API Key"    style="width:148px">
+  <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:148px">
   <label class="chk"><input type="checkbox" id="chk-testnet" checked> 测试网</label>
   <button class="btn btn-primary btn-sm" id="btn-connect" onclick="connect()">连 接</button>
-  <span class="conn-dot err" id="conn-status">● 未连接</span>
-  <div class="hdr-sep"></div>
-  <div class="user-badge">👤 <span id="current-user">...</span></div>
-  <button class="btn btn-ghost btn-sm" onclick="logout()">登出</button>
+  <span class="status err" id="conn-status">&#9679; 未连接</span>
+
+  <div class="hdr-divider"></div>
+
+  <div class="hdr-right">
+    <div class="user-tag">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <span id="current-user" style="color:var(--text);font-weight:500">加载中...</span>
+    </div>
+    <a href="https://github.com/gongxianga/binance-futures-bot" target="_blank" style="text-decoration:none">
+      <button class="btn btn-ghost btn-sm">
+        <svg style="width:12px;height:12px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </button>
+    </a>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
+  </div>
 </div>
 
 <!-- Body -->
 <div class="body">
 
-  <!-- 左列：雷达图 + 策略扫描 -->
+  <!-- Left: account + trade -->
   <div class="panel-left">
-    <div class="card left-card">
-      <div class="left-tabs">
-        <div class="ltab active" onclick="switchLeft('radar')">📡 市场雷达</div>
-        <div class="ltab" onclick="switchLeft('scanner')">🔍 策略扫描</div>
-        <span style="margin-left:auto;font-size:10px;color:var(--muted);align-self:center" id="radar-ts"></span>
-        <button class="btn btn-ghost btn-sm" style="margin-left:6px;align-self:center" onclick="loadTickers()">刷新</button>
-      </div>
 
-      <!-- 雷达图 -->
-      <div class="left-panel-body" id="lpanel-radar">
-        <div id="radar-chart"></div>
-      </div>
-
-      <!-- 策略扫描 -->
-      <div class="left-panel-body" id="lpanel-scanner" style="display:none">
-        <div class="scan-panel">
-          <div class="scan-grid">
-            <div class="scan-field"><label>最低信号分</label><input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4"></div>
-            <div class="scan-field"><label>交易金额(U)</label><input class="form-inp" id="s-usdt" value="100"></div>
-            <div class="scan-field"><label>杠杆倍数</label><input class="form-inp" id="s-lev" value="10" type="number"></div>
-            <div class="scan-field"><label>止损 %</label><input class="form-inp" id="s-sl" value="2.0"></div>
-            <div class="scan-field"><label>止盈 %</label><input class="form-inp" id="s-tp" value="4.0"></div>
-          </div>
-          <div class="mode-row">
-            <span>模式:</span>
-            <label><input type="radio" name="mode" value="manual" checked> 手动</label>
-            <label><input type="radio" name="mode" value="auto"> 自动</label>
-          </div>
-          <div class="scan-ctrl">
-            <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">▶ 开始</button>
-            <button class="btn btn-ghost btn-sm" id="btn-scan-stop" onclick="stopScan()" disabled>■ 停止</button>
-            <span class="scan-badge" id="scan-status">未启动</span>
-          </div>
-          <div class="prog-wrap" id="scan-progress-wrap">
-            <div class="prog-info">
-              <span id="scan-progress-text">扫描中...</span>
-              <span id="scan-progress-pct">0%</span>
-            </div>
-            <div class="prog-bar"><div class="prog-fill" id="scan-progress-bar" style="width:0%"></div></div>
-          </div>
-          <div class="scan-sep"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span style="font-size:11px;font-weight:700;color:var(--text)">扫描结果</span>
-            <span style="font-size:10px;color:var(--muted)" id="scan-ts"></span>
-          </div>
-          <div class="tbl-wrap">
-            <table id="scan-table">
-              <thead><tr>
-                <th>交易对</th><th>分</th><th>方向</th>
-                <th>量价</th><th>RSI</th><th>动量</th><th>布林</th>
-                <th>价格</th><th>操作</th>
-              </tr></thead>
-              <tbody id="scan-tbody"><tr><td colspan="9" class="muted" style="padding:20px">点击开始扫描</td></tr></tbody>
-            </table>
-          </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-dot green"></div> 账户信息
+        <div class="card-hdr-right">
+          <button class="btn btn-ghost btn-sm" onclick="loadAccount()">刷新</button>
         </div>
       </div>
+      <div class="acc-grid">
+        <div class="acc-chip"><label>可用</label><div class="val" id="v-avail">-- USDT</div></div>
+        <div class="acc-chip"><label>余额</label><div class="val neutral" id="v-wallet">-- USDT</div></div>
+        <div class="acc-chip"><label>浮盈</label><div class="val" id="v-pnl">-- USDT</div></div>
+      </div>
     </div>
+
+    <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-hdr">
+        <div class="card-dot"></div> 手动交易
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px">
+        <div class="form-row">
+          <label>交易对</label>
+          <div class="sym-row">
+            <input class="form-inp" id="f-sym" value="BTCUSDT">
+            <button class="btn btn-ghost btn-sm" onclick="getPrice()">报价</button>
+          </div>
+        </div>
+        <div class="cur-price" id="f-cprice">--</div>
+        <div class="form-row">
+          <label>订单类型</label>
+          <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
+            <option>MARKET</option><option>LIMIT</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>杠杆倍数</label>
+          <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
+        </div>
+        <div class="form-row">
+          <label>数量</label>
+          <input class="form-inp" id="f-qty" value="0.001">
+        </div>
+        <div class="form-row">
+          <label>限价</label>
+          <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单">
+        </div>
+        <div class="btn-row" style="margin-bottom:10px">
+          <button class="btn btn-long"  onclick="manualOrder('BUY')">做多 &#9650;</button>
+          <button class="btn btn-short" onclick="manualOrder('SELL')">做空 &#9660;</button>
+        </div>
+        <button class="btn btn-warn btn-sm" style="width:100%" onclick="cancelOrders()">撤销当前交易对挂单</button>
+      </div>
+    </div>
+
   </div>
 
   <div class="resizer-col" id="resizer-left"></div>
 
-  <!-- 中列：交易 + 持仓 -->
-  <div class="panel-mid">
-    <div class="card right-card">
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab('trade')">交 易</div>
-      </div>
-      <div class="tab-panel active" id="tab-trade">
-        <div class="tab-body">
-          <div class="acc-grid">
-            <div class="acc-item"><label>可用余额</label><div class="val" id="v-avail">-- USDT</div></div>
-            <div class="acc-item"><label>钱包余额</label><div class="val" id="v-wallet">-- USDT</div></div>
-            <div class="acc-item"><label>未实现盈亏</label><div class="val" id="v-pnl">-- USDT</div></div>
+  <!-- Main: radar + scanner (top), positions (bottom) -->
+  <div class="panel-main">
+
+    <div class="main-top">
+
+      <!-- Radar -->
+      <div class="card radar-card">
+        <div class="card-hdr">
+          <div class="card-dot" id="radar-dot"></div> 市场雷达
+          <span style="font-size:10px;color:var(--muted);font-weight:400" id="radar-ts"></span>
+          <div class="card-hdr-right">
+            <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="loadAccount()" style="margin-bottom:12px">刷新账户</button>
-          <hr class="sep">
-          <div class="form-grid">
-            <label>交易对</label>
-            <div class="sym-row">
-              <input class="form-inp" id="f-sym" value="BTCUSDT" style="width:100px">
-              <span class="cur-price" id="f-cprice">--</span>
-              <button class="btn btn-ghost btn-sm" onclick="getPrice()">查价</button>
-            </div>
-            <label>订单类型</label>
-            <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
-              <option>MARKET</option><option>LIMIT</option>
-            </select>
-            <label>杠杆</label>
-            <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
-            <label>数量</label>
-            <input class="form-inp" id="f-qty" value="0.001">
-            <label>限价</label>
-            <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单需要">
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-long" onclick="manualOrder('BUY')">做 多 ▲</button>
-            <button class="btn btn-short" onclick="manualOrder('SELL')">做 空 ▼</button>
-          </div>
-          <button class="btn btn-warn btn-sm" onclick="cancelOrders()">撤销所有挂单</button>
+        </div>
+        <div class="radar-wrap">
+          <div id="radar-chart"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="scan-sweep" id="scan-sweep"></div>
         </div>
       </div>
+
+      <div class="resizer-col" id="resizer-inner"></div>
+
+      <!-- Scanner -->
+      <div class="card scanner-card">
+        <div class="card-hdr">
+          <div class="card-dot muted" id="scan-dot"></div>
+          策略扫描
+          <span style="font-size:10px;color:var(--muted);font-weight:400" id="scan-ts"></span>
+          <div class="card-hdr-right">
+            <span class="countdown" id="scan-status">未启动</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+          <!-- Settings bar -->
+          <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border);background:var(--bg3)">
+            <div class="scan-settings-grid">
+              <div class="scan-field">
+                <label>最低信号分</label>
+                <input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4">
+              </div>
+              <div class="scan-field">
+                <label>金额 (USDT)</label>
+                <input class="form-inp" id="s-usdt" value="100">
+              </div>
+              <div class="scan-field">
+                <label>杠杆倍数</label>
+                <input class="form-inp" id="s-lev" value="10" type="number">
+              </div>
+              <div class="scan-field">
+                <label>止损 %</label>
+                <input class="form-inp" id="s-sl" value="2.0">
+              </div>
+              <div class="scan-field">
+                <label>止盈 %</label>
+                <input class="form-inp" id="s-tp" value="4.0">
+              </div>
+              <div class="scan-field" style="display:flex;flex-direction:column;justify-content:flex-end">
+                <label>执行模式</label>
+                <select class="form-inp" id="s-mode">
+                  <option value="manual">手动确认</option>
+                  <option value="auto">全自动</option>
+                </select>
+              </div>
+            </div>
+            <div class="scan-ctrl">
+              <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">&#9654; 开始扫描</button>
+              <button class="btn btn-ghost btn-sm"   id="btn-scan-stop"  onclick="stopScan()" disabled>&#9632; 停止</button>
+              <div class="progress-wrap" id="scan-progress-wrap" style="display:none">
+                <div class="progress-meta">
+                  <span id="scan-progress-text">扫描中...</span>
+                  <span id="scan-progress-pct">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar" id="scan-progress-bar"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Results -->
+          <div style="flex:1;overflow-y:auto;padding:12px 14px">
+            <div class="empty-state" id="scan-empty">
+              <div class="empty-icon">&#128225;</div>
+              <div>点击「开始扫描」启动策略雷达</div>
+            </div>
+            <div class="signal-grid" id="scan-signals"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="resizer-row" id="resizer-mid"></div>
 
-    <div class="card pos-card">
+    <!-- Positions -->
+    <div class="card positions-card">
       <div class="card-hdr">
-        <span class="title">当前持仓</span>
-        <button class="btn btn-ghost btn-sm" onclick="loadPositions()" style="margin-left:auto">刷新</button>
+        <div class="card-dot green"></div> 当前持仓
+        <div class="card-hdr-right">
+          <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
+        </div>
       </div>
-      <div class="pos-card tbl-scroll" style="height:calc(100% - 36px);overflow-y:auto">
+      <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 40px)">
         <table>
           <thead><tr>
             <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
-            <th>标记价</th><th>盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
+            <th>标记价</th><th>未实现盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
           </tr></thead>
-          <tbody id="pos-tbody"><tr><td colspan="9" class="muted" style="padding:14px">暂无持仓</td></tr></tbody>
+          <tbody id="pos-tbody">
+            <tr><td colspan="9" class="muted" style="padding:20px">暂无持仓</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
+
   </div>
 
   <div class="resizer-col" id="resizer-right"></div>
 
-  <!-- 右列：日志 -->
+  <!-- Right: log -->
   <div class="panel-right">
-    <div class="card log-card">
+    <div class="card log-panel">
       <div class="card-hdr">
-        <span class="title">操作日志</span>
-        <button class="btn btn-ghost btn-sm" onclick="clearLog()" style="margin-left:auto">清除</button>
+        <div class="card-dot cyan"></div> 操作日志
+        <div class="card-hdr-right">
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">清除</button>
+        </div>
       </div>
-      <div class="log-box" id="log-box"></div>
+      <div class="log-box" id="log-box">
+        <div class="log-entry"><span class="ts">[--:--:--]</span><span class="info">系统启动中...</span></div>
+      </div>
     </div>
   </div>
 
@@ -317,12 +574,11 @@ tbody tr:hover td{background:var(--bg3)}
 <div id="toast"></div>
 
 <script>
-let radarChart = null;
+let radarChart  = null;
 let tickerData  = [];
 let signalMap   = {};
 let scanRunning = false;
 
-// ── Init ─────────────────────────────────────────
 window.addEventListener('load', () => {
   loadCurrentUser();
   initChart();
@@ -330,144 +586,140 @@ window.addEventListener('load', () => {
   loadStatus();
   loadLog();
   loadSavedConfig();
-  setInterval(autoRefresh, 5000);
-  setInterval(loadLog, 3000);
+  setInterval(autoRefresh,    5000);
+  setInterval(loadLog,        3000);
   setInterval(loadScanStatus, 1000);
-  setInterval(loadTickers, 60000);
+  setInterval(loadTickers,   60000);
   initResizers();
 });
 
-// ── Auth ─────────────────────────────────────────
 async function loadCurrentUser() {
-  const r = await fetch('/api/auth/status').then(r=>r.json()).catch(()=>({}));
-  if (r.authenticated) document.getElementById('current-user').textContent = r.username;
-  else window.location.href = '/login';
+  const r = await fetch('/api/auth/status').then(r => r.json()).catch(() => ({}));
+  if (r.authenticated) {
+    document.getElementById('current-user').textContent = r.username;
+    document.getElementById('user-avatar').textContent  = r.username.charAt(0).toUpperCase();
+  } else {
+    window.location.href = '/login';
+  }
 }
+
 async function logout() {
   if (!confirm('确认退出登录？')) return;
-  await fetch('/api/auth/logout', {method:'POST'});
+  await fetch('/api/auth/logout', { method: 'POST' });
   window.location.href = '/login';
 }
 
-// ── Status / Config ───────────────────────────────
 async function loadStatus() {
-  const r = await fetch('/api/status').then(r=>r.json()).catch(()=>({}));
-  if (r.connected) {
-    setConnected(true);
-    autoRefresh();
-  }
+  const r = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+  if (r.connected) { setConnected(true); autoRefresh(); }
 }
+
 async function loadSavedConfig() {
-  const cfg = await fetch('/api/config').then(r=>r.json()).catch(()=>({}));
+  const cfg = await fetch('/api/config').then(r => r.json()).catch(() => ({}));
   if (cfg.api_key) document.getElementById('inp-key').value = cfg.api_key;
   if (cfg.testnet !== undefined) document.getElementById('chk-testnet').checked = cfg.testnet;
 }
-function setConnected(ok) {
-  const el = document.getElementById('conn-status');
-  el.className = 'conn-dot ' + (ok ? 'ok' : 'err');
-  el.textContent = ok ? '● 已连接' : '● 未连接';
-}
 
-// ── Connect ───────────────────────────────────────
 async function connect() {
   const key    = document.getElementById('inp-key').value.trim();
   const secret = document.getElementById('inp-secret').value.trim();
   const test   = document.getElementById('chk-testnet').checked;
   if (!key || !secret) { toast('请填写 API Key 和 Secret', 'err'); return; }
-  document.getElementById('btn-connect').disabled = true;
+  const btn = document.getElementById('btn-connect');
+  btn.disabled = true; btn.textContent = '连接中...';
   const r = await fetch('/api/connect', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({api_key:key, api_secret:secret, testnet:test})
-  }).then(r=>r.json()).catch(()=>({ok:false,msg:'网络错误'}));
-  document.getElementById('btn-connect').disabled = false;
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: key, api_secret: secret, testnet: test })
+  }).then(r => r.json());
+  btn.disabled = false; btn.textContent = '连 接';
   if (r.ok) { setConnected(true); toast('连接成功', 'ok'); autoRefresh(); }
-  else toast('连接失败: ' + r.msg, 'err');
+  else { setConnected(false); toast('连接失败: ' + r.msg, 'err'); }
 }
 
-// ── Account ───────────────────────────────────────
+function setConnected(ok) {
+  const el = document.getElementById('conn-status');
+  el.className  = 'status ' + (ok ? 'ok' : 'err');
+  el.textContent = ok ? '● 已连接' : '● 未连接';
+}
+
 async function autoRefresh() { await loadAccount(); await loadPositions(); }
 
 async function loadAccount() {
-  const r = await fetch('/api/account').then(r=>r.json()).catch(()=>({}));
+  const r = await fetch('/api/account').then(r => r.json()).catch(() => ({}));
   if (!r.ok) return;
   document.getElementById('v-avail').textContent  = r.available.toFixed(2) + ' USDT';
   document.getElementById('v-wallet').textContent = r.wallet.toFixed(2) + ' USDT';
   const el = document.getElementById('v-pnl');
   el.textContent = (r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2) + ' USDT';
-  el.className = 'val' + (r.pnl < 0 ? ' neg' : '');
+  el.className   = 'val ' + (r.pnl >= 0 ? '' : 'neg');
 }
 
 async function loadPositions() {
-  const r = await fetch('/api/positions').then(r=>r.json()).catch(()=>({positions:[]}));
-  const tb = document.getElementById('pos-tbody');
+  const r = await fetch('/api/positions').then(r => r.json()).catch(() => ({ positions: [] }));
+  const tbody = document.getElementById('pos-tbody');
   if (!r.positions.length) {
-    tb.innerHTML = '<tr><td colspan="9" class="muted" style="padding:14px">暂无持仓</td></tr>'; return;
+    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>';
+    return;
   }
-  tb.innerHTML = r.positions.map(p => `
+  tbody.innerHTML = r.positions.map(p => `
     <tr>
       <td class="accent">${p.symbol}</td>
-      <td>${p.side==='多'?'<span class="tag-long">多▲</span>':'<span class="tag-short">空▼</span>'}</td>
-      <td>${p.amt.toFixed(4)}</td>
-      <td>${p.entry.toFixed(4)}</td>
-      <td>${p.mark.toFixed(4)}</td>
-      <td class="${p.pnl>=0?'green':'red'}">${p.pnl>=0?'+':''}${p.pnl.toFixed(2)}</td>
-      <td class="${p.roe>=0?'green':'red'}">${p.roe>=0?'+':''}${p.roe.toFixed(2)}%</td>
+      <td class="${p.side === '多' ? 'green' : 'red'}">${p.side === '多' ? '多 ▲' : '空 ▼'}</td>
+      <td>${p.amt.toFixed(4)}</td><td>${p.entry.toFixed(4)}</td><td>${p.mark.toFixed(4)}</td>
+      <td class="${p.pnl >= 0 ? 'green' : 'red'}">${p.pnl >= 0 ? '+' : ''}${p.pnl.toFixed(2)}</td>
+      <td class="${p.roe >= 0 ? 'green' : 'red'}">${p.roe >= 0 ? '+' : ''}${p.roe.toFixed(2)}%</td>
       <td>${p.leverage}x</td>
-      <td><button class="btn btn-danger btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
+      <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
     </tr>`).join('');
 }
 
-// ── Trade ─────────────────────────────────────────
 async function getPrice() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
-  const r = await fetch('/api/price/'+sym).then(r=>r.json()).catch(()=>({}));
+  const r = await fetch('/api/price/' + sym).then(r => r.json()).catch(() => ({}));
   if (r.ok) document.getElementById('f-cprice').textContent = r.price.toFixed(4);
-  else toast('获取价格失败','err');
+  else toast('获取价格失败', 'err');
 }
+
 function onOtypeChange() {
   document.getElementById('f-lprice').disabled = document.getElementById('f-otype').value !== 'LIMIT';
 }
+
 async function manualOrder(side) {
-  const sym=document.getElementById('f-sym').value.trim().toUpperCase();
-  const otype=document.getElementById('f-otype').value;
-  const qty=parseFloat(document.getElementById('f-qty').value);
-  const lev=parseInt(document.getElementById('f-lev').value);
-  const lpx=parseFloat(document.getElementById('f-lprice').value);
-  const cn=side==='BUY'?'做多▲':'做空▼';
-  const extra=otype==='LIMIT'?`\n限价: ${lpx}`:'';
-  if (!confirm(`确认下单？\n${sym}  ${cn}\n${otype}  数量:${qty}  杠杆:${lev}x${extra}`)) return;
-  const body={symbol:sym,side,type:otype,qty,leverage:lev};
-  if (otype==='LIMIT') body.price=lpx;
-  const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
-  if (r.ok){toast('下单成功 '+cn+' '+sym,'ok');autoRefresh();}
-  else toast('下单失败: '+r.msg,'err');
+  const sym   = document.getElementById('f-sym').value.trim().toUpperCase();
+  const otype = document.getElementById('f-otype').value;
+  const qty   = parseFloat(document.getElementById('f-qty').value);
+  const lev   = parseInt(document.getElementById('f-lev').value);
+  const lpx   = parseFloat(document.getElementById('f-lprice').value);
+  const cn    = side === 'BUY' ? '做多(买入)' : '做空(卖出)';
+  const extra = otype === 'LIMIT' ? '\n限价: ' + lpx : '';
+  if (!confirm('确认下单？\n交易对: ' + sym + '\n方向: ' + cn + '\n类型: ' + otype + '\n数量: ' + qty + '\n杠杆: ' + lev + 'x' + extra)) return;
+  const body = { symbol: sym, side, type: otype, qty, leverage: lev };
+  if (otype === 'LIMIT') body.price = lpx;
+  const r = await fetch('/api/order', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) { toast('下单成功 ' + cn + ' ' + sym, 'ok'); autoRefresh(); }
+  else toast('下单失败: ' + r.msg, 'err');
 }
+
 async function closePos(symbol) {
-  if (!confirm(`确认平仓 ${symbol}？`)) return;
-  const r=await fetch('/api/close',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol})}).then(r=>r.json());
-  if (r.ok){toast('平仓成功: '+symbol,'ok');autoRefresh();}
-  else toast('平仓失败: '+r.msg,'err');
+  if (!confirm('确认平仓 ' + symbol + '？')) return;
+  const r = await fetch('/api/close', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol })
+  }).then(r => r.json());
+  if (r.ok) { toast('平仓成功: ' + symbol, 'ok'); autoRefresh(); }
+  else toast('平仓失败: ' + r.msg, 'err');
 }
+
 async function cancelOrders() {
-  const sym=document.getElementById('f-sym').value.trim().toUpperCase();
-  if (!confirm(`撤销 ${sym} 所有挂单？`)) return;
-  const r=await fetch('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:sym})}).then(r=>r.json());
-  toast(r.msg,r.ok?'ok':'err');
+  const sym = document.getElementById('f-sym').value.trim().toUpperCase();
+  if (!confirm('撤销 ' + sym + ' 所有挂单？')) return;
+  const r = await fetch('/api/cancel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: sym })
+  }).then(r => r.json());
+  toast(r.msg, r.ok ? 'ok' : 'err');
 }
 
-// ── Tabs ──────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['trade'][i]===name));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+name));
-}
-function switchLeft(name) {
-  document.querySelectorAll('.ltab').forEach((t,i)=>t.classList.toggle('active',['radar','scanner'][i]===name));
-  document.getElementById('lpanel-radar').style.display   = name==='radar'   ? 'flex' : 'none';
-  document.getElementById('lpanel-scanner').style.display = name==='scanner' ? 'flex' : 'none';
-  if (name==='radar' && radarChart) setTimeout(()=>radarChart.resize(), 50);
-}
-
-// ── Scanner ───────────────────────────────────────
 function getScanSettings() {
   return {
     min_score:  parseInt(document.getElementById('s-minscore').value),
@@ -475,227 +727,301 @@ function getScanSettings() {
     leverage:   parseInt(document.getElementById('s-lev').value),
     sl_pct:     parseFloat(document.getElementById('s-sl').value),
     tp_pct:     parseFloat(document.getElementById('s-tp').value),
-    auto_trade: document.querySelector('input[name="mode"]:checked').value==='auto',
+    auto_trade: document.getElementById('s-mode').value === 'auto',
   };
 }
-async function startScan() {
-  const r=await fetch('/api/scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(getScanSettings())}).then(r=>r.json());
-  if (r.ok){scanRunning=true;document.getElementById('btn-scan-start').disabled=true;document.getElementById('btn-scan-stop').disabled=false;toast('扫描已启动','ok');}
-}
-async function stopScan() {
-  await fetch('/api/scan/stop',{method:'POST'});
-  scanRunning=false;
-  document.getElementById('btn-scan-start').disabled=false;
-  document.getElementById('btn-scan-stop').disabled=true;
-  document.getElementById('scan-status').textContent='已停止';
-}
-async function loadScanStatus() {
-  const r=await fetch('/api/scan/status').then(r=>r.json()).catch(()=>({}));
-  if (!r) return;
-  scanRunning=r.running;
-  document.getElementById('btn-scan-start').disabled=r.running;
-  document.getElementById('btn-scan-stop').disabled=!r.running;
-  const prog=r.progress||{};
-  const pw=document.getElementById('scan-progress-wrap');
-  if (prog.total>0) {
-    const pct=Math.round(prog.current/prog.total*100);
-    pw.style.display='block';
-    document.getElementById('scan-progress-text').textContent=`扫描 ${prog.current}/${prog.total}: ${prog.symbol}`;
-    document.getElementById('scan-progress-pct').textContent=pct+'%';
-    document.getElementById('scan-progress-bar').style.width=pct+'%';
-    document.getElementById('scan-status').textContent='扫描中...';
+
+function setScanActive(active) {
+  document.getElementById('btn-scan-start').disabled = active;
+  document.getElementById('btn-scan-stop').disabled  = !active;
+  const sweep = document.getElementById('scan-sweep');
+  const dot   = document.getElementById('scan-dot');
+  if (active) {
+    sweep.classList.add('active');
+    dot.className = 'card-dot';
+    dot.style.animation = 'pulse-dot 1s ease-in-out infinite';
   } else {
-    pw.style.display='none';
-    if (r.running) document.getElementById('scan-status').textContent=`下次 ${r.countdown}`;
+    sweep.classList.remove('active');
+    dot.className = 'card-dot muted';
+    dot.style.animation = 'none';
   }
+}
+
+async function startScan() {
+  const r = await fetch('/api/scan/start', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getScanSettings())
+  }).then(r => r.json());
+  if (r.ok) { scanRunning = true; setScanActive(true); toast('扫描已启动', 'ok'); }
+}
+
+async function stopScan() {
+  await fetch('/api/scan/stop', { method: 'POST' });
+  scanRunning = false;
+  setScanActive(false);
+  document.getElementById('scan-status').textContent = '已停止';
+}
+
+async function loadScanStatus() {
+  const r = await fetch('/api/scan/status').then(r => r.json()).catch(() => ({}));
+  if (!r) return;
+  scanRunning = r.running;
+  setScanActive(r.running);
+
+  const prog = r.progress || {};
+  const wrap  = document.getElementById('scan-progress-wrap');
+  if (prog.total > 0) {
+    const pct = Math.round(prog.current / prog.total * 100);
+    wrap.style.display = 'block';
+    document.getElementById('scan-progress-text').textContent = prog.current + '/' + prog.total + ': ' + prog.symbol;
+    document.getElementById('scan-progress-pct').textContent  = pct + '%';
+    document.getElementById('scan-progress-bar').style.width  = pct + '%';
+    document.getElementById('scan-status').textContent = '扫描中...';
+  } else {
+    wrap.style.display = 'none';
+    if (r.running) document.getElementById('scan-status').textContent = '下次: ' + r.countdown;
+  }
+
   if (r.ts) {
-    document.getElementById('scan-ts').textContent=r.ts;
-    renderScanResults(r.results||[]);
-    signalMap={};
-    (r.results||[]).forEach(res=>{signalMap[res.symbol]=res.score;});
+    document.getElementById('scan-ts').textContent = r.ts;
+    renderSignals(r.results || []);
+    signalMap = {};
+    (r.results || []).forEach(s => { signalMap[s.symbol] = s.score; });
     if (tickerData.length) renderChart();
   }
 }
 
-function renderScanResults(results) {
-  const tb=document.getElementById('scan-tbody');
-  if (!results.length){tb.innerHTML='<tr><td colspan="9" class="muted" style="padding:16px">暂无信号</td></tr>';return;}
-  tb.innerHTML=results.map(r=>{
-    const stars='★'.repeat(r.score);
-    const d=r.details;
-    return `<tr>
-      <td class="accent" style="font-weight:700">${r.symbol}</td>
-      <td class="s${Math.min(r.score,4)}">${stars}</td>
-      <td>${r.direction==='LONG'?'<span class="tag-long">多</span>':'<span class="tag-short">空</span>'}</td>
-      <td class="${d.vol.cls}">${d.vol.text}</td>
-      <td class="${d.rsi.cls}">${d.rsi.text}</td>
-      <td class="${d.mom.cls}">${d.mom.text}</td>
-      <td class="${d.bb.cls}">${d.bb.text}</td>
-      <td>${r.price.toFixed(4)}</td>
-      <td><button class="btn btn-primary btn-sm" onclick="tradeSignal(${JSON.stringify(r).replace(/"/g,'&quot;')})">交易</button></td>
-    </tr>`;
+function renderSignals(results) {
+  const empty = document.getElementById('scan-empty');
+  const grid  = document.getElementById('scan-signals');
+  if (!results.length) {
+    empty.style.display = 'block';
+    grid.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = results.map(r => {
+    const isLong = r.direction === 'LONG';
+    const d = r.details;
+    const tagCls = (c) => c === 'green' ? 'up' : c === 'red' ? 'dn' : '';
+    const tags = [
+      '<span class="sig-tag ' + tagCls(d.vol.cls) + '">量价 ' + (d.vol.text||'') + '</span>',
+      '<span class="sig-tag ' + tagCls(d.rsi.cls) + '">RSI ' + (d.rsi.text||'') + '</span>',
+      '<span class="sig-tag ' + tagCls(d.mom.cls) + '">动量 ' + (d.mom.text||'') + '</span>',
+      '<span class="sig-tag ' + tagCls(d.bb.cls)  + '">BB '  + (d.bb.text ||'') + '</span>',
+    ].join('');
+    const safeR = JSON.stringify(r).replace(/"/g, '&quot;');
+    return '<div class="signal-card ' + (isLong ? 'long' : 'short') + '">' +
+      '<div class="sig-sym">' + r.symbol.replace('USDT','') + '<span style="color:var(--muted);font-size:10px;font-weight:400">/USDT</span></div>' +
+      '<div class="sig-dir ' + (isLong ? 'long' : 'short') + '">' + (isLong ? '多 ▲' : '空 ▼') + '</div>' +
+      '<div class="sig-stars">' + '★'.repeat(r.score) + '☆'.repeat(4-r.score) + '</div>' +
+      '<div class="sig-tags">' + tags + '</div>' +
+      '<div class="sig-price">' + r.price.toFixed(4) + '</div>' +
+      '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal(' + safeR + ')">交易</button></div>' +
+      '</div>';
   }).join('');
 }
 
 async function tradeSignal(signal) {
-  const s=getScanSettings();
-  const side=signal.direction==='LONG'?'BUY':'SELL';
-  const cn=side==='BUY'?'做多▲':'做空▼';
-  if (!confirm(`${signal.symbol}  ${cn}\n评分:${signal.score}  金额:${s.trade_usdt}U  杠杆:${s.leverage}x\n止损:${s.sl_pct}%  止盈:${s.tp_pct}%`)) return;
-  const pr=await fetch('/api/price/'+signal.symbol).then(r=>r.json()).catch(()=>({}));
-  const price=pr.price||signal.price;
-  const qty=Math.round(s.trade_usdt/price*1000)/1000;
-  const r=await fetch('/api/order/sltp',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({symbol:signal.symbol,side,qty,leverage:s.leverage,sl_pct:s.sl_pct,tp_pct:s.tp_pct})}).then(r=>r.json());
-  if (r.ok){toast(`下单成功 ${cn} ${signal.symbol}  SL:${r.sl?.toFixed(4)}  TP:${r.tp?.toFixed(4)}`,'ok');autoRefresh();}
-  else toast('下单失败: '+r.msg,'err');
+  const s    = getScanSettings();
+  const side = signal.direction === 'LONG' ? 'BUY' : 'SELL';
+  const cn   = side === 'BUY' ? '做多' : '做空';
+  if (!confirm('交易信号\n交易对: ' + signal.symbol + '\n方向: ' + cn + '\n评分: ' + signal.score + '分\n金额: ' + s.trade_usdt + ' USDT\n杠杆: ' + s.leverage + 'x\n止损: ' + s.sl_pct + '%  止盈: ' + s.tp_pct + '%')) return;
+  const pr  = await fetch('/api/price/' + signal.symbol).then(r => r.json()).catch(() => ({}));
+  const qty = Math.round(s.trade_usdt / (pr.price || signal.price) * 1000) / 1000;
+  const r   = await fetch('/api/order/sltp', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbol: signal.symbol, side, qty, leverage: s.leverage, sl_pct: s.sl_pct, tp_pct: s.tp_pct })
+  }).then(r => r.json());
+  if (r.ok) { toast('下单成功 ' + cn + ' ' + signal.symbol + '  SL:' + (r.sl||0).toFixed(4) + '  TP:' + (r.tp||0).toFixed(4), 'ok'); autoRefresh(); }
+  else toast('下单失败: ' + r.msg, 'err');
 }
 
-// ── Radar Chart ───────────────────────────────────
 function initChart() {
-  const el=document.getElementById('radar-chart');
-  radarChart=echarts.init(el,null,{renderer:'canvas'});
-  window.addEventListener('resize',()=>radarChart.resize());
-  radarChart.on('click',params=>{
-    if (params.data) {
-      const sym=params.data.value[3];
-      document.getElementById('f-sym').value=sym;
-      toast('已选择: '+sym,'ok');
+  const el = document.getElementById('radar-chart');
+  radarChart = echarts.init(el, null, { renderer: 'canvas' });
+  window.addEventListener('resize', () => radarChart.resize());
+  radarChart.on('click', params => {
+    if (params.data?.value) {
+      document.getElementById('f-sym').value = params.data.value[3];
+      toast('已选择: ' + params.data.value[3], 'info');
     }
   });
 }
 
 async function loadTickers() {
-  const r=await fetch('/api/tickers').then(r=>r.json()).catch(()=>({tickers:[]}));
+  const r = await fetch('/api/tickers').then(r => r.json()).catch(() => ({ tickers: [] }));
   if (r.tickers?.length) {
-    tickerData=r.tickers;
+    tickerData = r.tickers;
     renderChart();
-    document.getElementById('radar-ts').textContent=new Date().toLocaleTimeString();
+    document.getElementById('radar-ts').textContent = new Date().toLocaleTimeString();
   }
 }
 
 function renderChart() {
-  if (!radarChart||!tickerData.length) return;
-  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
-  const bg    = dark?'#161b22':'#ffffff';
-  const grid  = dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
-  const muted = dark?'#7d8590':'#94a3b8';
-  const label = dark?'#c8d3de':'#475569';
-  const maxVol=Math.max(...tickerData.map(t=>t.vol));
+  if (!radarChart || !tickerData.length) return;
+  const dark  = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const bg    = dark ? '#161b27' : '#ffffff';
+  const grid  = dark ? '#2d3452' : '#e8eaf0';
+  const muted = dark ? '#6b7280' : '#9ca3af';
+  const tip   = dark ? '#c8cce8' : '#4b5563';
 
-  // 普通散点
-  const normal=tickerData.filter(t=>!(signalMap[t.symbol]>=2)).map(t=>{
-    const size=Math.max(5,Math.min(32,t.vol/maxVol*32));
-    const alpha=0.45+Math.min(Math.abs(t.chg)/20,.45);
-    const color=t.chg>0?`rgba(16,185,129,${alpha})`:`rgba(239,68,68,${alpha})`;
-    return {value:[t.chg,t.vol,size,t.symbol,0],itemStyle:{color},symbolSize:size};
+  const maxVol = Math.max(...tickerData.map(t => t.vol));
+  const data = tickerData.map(t => {
+    const score = signalMap[t.symbol] || 0;
+    const size  = Math.max(7, Math.min(42, t.vol / maxVol * 42));
+    let color;
+    if      (score >= 4) color = '#ef4444';
+    else if (score >= 3) color = '#f59e0b';
+    else if (score >= 2) color = '#6175f7';
+    else color = t.chg > 0
+      ? 'rgba(16,185,129,' + (0.45 + Math.min(Math.abs(t.chg)/18, .55)) + ')'
+      : 'rgba(239,68,68,'  + (0.35 + Math.min(Math.abs(t.chg)/18, .55)) + ')';
+    return {
+      value: [t.chg, t.vol, size, t.symbol, score],
+      itemStyle: {
+        color,
+        borderColor: score >= 2 ? 'rgba(255,255,255,.5)' : 'transparent',
+        borderWidth: score >= 2 ? 1.5 : 0,
+        shadowBlur:  score >= 3 ? 14 : score >= 2 ? 6 : 0,
+        shadowColor: score >= 3 ? '#ef4444' : '#6175f7',
+      },
+      symbol:     score >= 2 ? 'diamond' : 'circle',
+      symbolSize: score >= 2 ? size * 1.35 : size,
+    };
   });
 
-  // 信号散点（动态脉冲）
-  const signals=tickerData.filter(t=>signalMap[t.symbol]>=2).map(t=>{
-    const score=signalMap[t.symbol];
-    const size=Math.max(14,Math.min(40,t.vol/maxVol*40));
-    const color=score>=4?'#f85149':score>=3?'#fb923c':'#ffd60a';
-    return {value:[t.chg,t.vol,size,t.symbol,score],itemStyle:{color},symbolSize:size*1.4};
-  });
-
-  // 标签（前25个+信号）
-  const labelSymbols=new Set([...tickerData.slice(0,20).map(t=>t.symbol),...Object.keys(signalMap)]);
-  const markPoints=tickerData.filter(t=>labelSymbols.has(t.symbol)).map(t=>({
-    coord:[t.chg,t.vol],
-    value:(signalMap[t.symbol]>=2?'★':'')+t.symbol.replace('USDT',''),
-    label:{show:true,position:'right',fontSize:9,
-      color:signalMap[t.symbol]>=2?'#ffd60a':label,
-      fontWeight:signalMap[t.symbol]>=2?'bold':'normal'}
+  const labels = tickerData.slice(0, 30).map(t => ({
+    coord: [t.chg, t.vol],
+    value: (signalMap[t.symbol] >= 2 ? '★ ' : '') + t.symbol.replace('USDT',''),
+    label: {
+      show: true, position: 'right', fontSize: 9,
+      color:      signalMap[t.symbol] >= 2 ? '#6175f7' : muted,
+      fontWeight: signalMap[t.symbol] >= 2 ? 'bold'    : 'normal',
+    }
   }));
 
   radarChart.setOption({
-    animation:true,
-    backgroundColor:bg,
-    grid:{left:50,right:16,top:24,bottom:36},
-    xAxis:{type:'value',name:'涨跌幅%',
-      nameTextStyle:{color:muted,fontSize:10},
-      axisLine:{lineStyle:{color:grid}},
-      splitLine:{lineStyle:{color:grid,type:'dashed'}},
-      axisLabel:{color:muted,fontSize:9}},
-    yAxis:{type:'value',name:'成交额(亿)',
-      nameTextStyle:{color:muted,fontSize:10},
-      axisLine:{lineStyle:{color:grid}},
-      splitLine:{lineStyle:{color:grid,type:'dashed'}},
-      axisLabel:{color:muted,fontSize:9}},
-    tooltip:{trigger:'item',backgroundColor:bg,borderColor:dark?'#30363d':'#e2e8f0',textStyle:{color:dark?'#e6edf3':'#1e293b',fontSize:11},
-      formatter:p=>{
-        const[chg,vol,,sym,score]=p.data.value;
-        return `<b>${sym}</b><br>涨跌: ${chg.toFixed(2)}%<br>成交: ${vol.toFixed(1)}亿${score?`<br>信号: ${'★'.repeat(score)}`:''}`;
-      }},
-    series:[
-      {type:'scatter',data:normal,z:1,
-        emphasis:{itemStyle:{borderColor:'#fff',borderWidth:1}}},
-      {type:'effectScatter',data:signals,z:3,
-        rippleEffect:{brushType:'stroke',scale:3,period:2},
-        showEffectOn:'render',
-        emphasis:{scale:true},
-        markPoint:{data:markPoints,symbol:'none'}},
-    ]
-  },true);
+    backgroundColor: bg,
+    animation: true, animationDuration: 600, animationEasing: 'cubicOut',
+    grid: { left: 52, right: 18, top: 24, bottom: 36 },
+    xAxis: {
+      type: 'value', name: '24h涨跌%',
+      nameTextStyle: { color: muted, fontSize: 10 },
+      axisLine: { lineStyle: { color: grid } },
+      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
+      axisLabel: { color: muted, fontSize: 10 },
+    },
+    yAxis: {
+      type: 'value', name: '成交额(亿)',
+      nameTextStyle: { color: muted, fontSize: 10 },
+      axisLine: { lineStyle: { color: grid } },
+      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
+      axisLabel: { color: muted, fontSize: 10 },
+    },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: bg, borderColor: grid,
+      textStyle: { color: tip, fontSize: 12 },
+      formatter: p => {
+        const [chg, vol, , sym, score] = p.data.value;
+        const sc = score > 0 ? '<br><b style="color:#6175f7">信号: ' + '★'.repeat(score) + '</b>' : '';
+        return '<b>' + sym + '</b><br>涨跌: ' + (chg>0?'+':'') + chg.toFixed(2) + '%<br>成交额: ' + vol.toFixed(1) + '亿' + sc;
+      }
+    },
+    series: [{ type: 'scatter', data, markPoint: { data: labels, symbol: 'none', animation: false } }],
+  }, true);
 }
 
-// ── Log ───────────────────────────────────────────
 async function loadLog() {
-  const r=await fetch('/api/log').then(r=>r.json()).catch(()=>({log:[]}));
-  const box=document.getElementById('log-box');
-  box.innerHTML=r.log.map(l=>`<div class="log-entry"><span class="log-ts">[${l.ts}]</span><span class="log-${l.level}">${l.msg}</span></div>`).join('');
+  const r = await fetch('/api/log').then(r => r.json()).catch(() => ({ log: [] }));
+  const box = document.getElementById('log-box');
+  if (!r.log?.length) return;
+  box.innerHTML = r.log.map(l =>
+    '<div class="log-entry"><span class="ts">[' + l.ts + ']</span><span class="' + l.level + '">' + l.msg + '</span></div>'
+  ).join('');
+  box.scrollTop = box.scrollHeight;
 }
-function clearLog() { document.getElementById('log-box').innerHTML=''; }
 
-// ── Toast ─────────────────────────────────────────
+function clearLog() { document.getElementById('log-box').innerHTML = ''; }
+
 let toastTimer;
-function toast(msg,type='info') {
-  const el=document.getElementById('toast');
-  el.textContent=msg;
-  el.style.display='block';
-  el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--text)';
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent    = msg;
+  el.style.display  = 'block';
+  el.style.color    = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--text)';
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.style.display='none',3000);
+  toastTimer = setTimeout(() => el.style.display = 'none', 3500);
 }
 
-// ── Resizable Panels ──────────────────────────────
 function initResizers() {
-  // 左列宽度
-  const r1=document.getElementById('resizer-left');
-  const pl=document.querySelector('.panel-left');
-  r1.addEventListener('mousedown',e=>{
+  colResize('resizer-left',  '.panel-left',   null,           false);
+  colResize('resizer-right', '.panel-right',  null,           true);
+  colResize('resizer-inner', '.radar-card',   '.scanner-card',false);
+  rowResize('resizer-mid',   '.main-top');
+}
+
+function colResize(id, selA, selB, shrinkA) {
+  const resizer = document.getElementById(id);
+  if (!resizer) return;
+  const elA = document.querySelector(selA);
+  if (!elA) return;
+
+  resizer.addEventListener('mousedown', e => {
     e.preventDefault();
-    const sx=e.clientX,sw=pl.offsetWidth;
-    r1.classList.add('dragging');
-    document.body.style.cssText='cursor:col-resize;user-select:none';
-    const mv=e=>{pl.style.width=Math.max(200,sw+e.clientX-sx)+'px';if(radarChart)radarChart.resize();};
-    const up=()=>{r1.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);if(radarChart)radarChart.resize();};
-    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    const startX = e.clientX;
+    const startW = elA.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const move = e => {
+      const dx = e.clientX - startX;
+      const w  = Math.max(180, startW + (shrinkA ? -dx : dx));
+      elA.style.width    = w + 'px';
+      elA.style.minWidth = '0';
+      if (radarChart) radarChart.resize();
+    };
+    const up = () => {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      if (radarChart) radarChart.resize();
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
   });
-  // 右列宽度
-  const r2=document.getElementById('resizer-right');
-  const pr=document.querySelector('.panel-right');
-  r2.addEventListener('mousedown',e=>{
+}
+
+function rowResize(id, topSel) {
+  const resizer = document.getElementById(id);
+  const topEl   = document.querySelector(topSel);
+  if (!resizer || !topEl) return;
+
+  resizer.addEventListener('mousedown', e => {
     e.preventDefault();
-    const sx=e.clientX,sw=pr.offsetWidth;
-    r2.classList.add('dragging');
-    document.body.style.cssText='cursor:col-resize;user-select:none';
-    const mv=e=>{pr.style.width=Math.max(160,sw-(e.clientX-sx))+'px';};
-    const up=()=>{r2.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
-    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
-  });
-  // 中列上下
-  const r3=document.getElementById('resizer-mid');
-  const rc=document.querySelector('.right-card');
-  r3.addEventListener('mousedown',e=>{
-    e.preventDefault();
-    const sy=e.clientY,sh=rc.offsetHeight;
-    r3.classList.add('dragging');
-    document.body.style.cssText='cursor:row-resize;user-select:none';
-    const mv=e=>{rc.style.flex='none';rc.style.height=Math.max(120,sh+e.clientY-sy)+'px';};
-    const up=()=>{r3.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
-    document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    const startY = e.clientY;
+    const startH = topEl.offsetHeight;
+    resizer.classList.add('dragging');
+    document.body.style.cursor     = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const move = e => {
+      const h = Math.max(200, startH + e.clientY - startY);
+      topEl.style.flex   = 'none';
+      topEl.style.height = h + 'px';
+      if (radarChart) radarChart.resize();
+    };
+    const up = () => {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
   });
 }
 </script>
