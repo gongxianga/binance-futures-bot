@@ -56,8 +56,31 @@
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
+### 方式1：一键安装（推荐）
 
+**Linux / macOS:**
+```bash
+git clone https://github.com/gongxianga/binance-futures-bot.git
+cd binance-futures-bot
+chmod +x install.sh
+./install.sh
+python3 app.py
+```
+
+**或者使用自动安装脚本：**
+```bash
+curl -sSL https://raw.githubusercontent.com/gongxianga/binance-futures-bot/main/install.sh | bash
+```
+
+### 方式2：手动安装
+
+**1. 克隆仓库**
+```bash
+git clone https://github.com/gongxianga/binance-futures-bot.git
+cd binance-futures-bot
+```
+
+**2. 安装依赖**
 ```bash
 pip install -r requirements.txt
 ```
@@ -71,19 +94,16 @@ pip install -r requirements.txt
 - `matplotlib` - 数据可视化
 - `numpy` - 数值计算
 
-### 2. 启动程序
-
+**3. 启动程序**
 ```bash
 python app.py
 ```
 
-或双击 `启动.bat`（Windows）
-
-### 3. 访问界面
+**4. 访问界面**
 
 浏览器打开：`http://localhost:5000`
 
-### 4. 登录
+**5. 登录**
 
 **默认账户：**
 - 用户名：`admin`
@@ -91,7 +111,7 @@ python app.py
 
 ⚠️ **重要：首次登录后请立即修改密码！**
 
-### 5. 配置币安API
+**6. 配置币安API**
 
 登录成功后：
 1. 在顶部输入币安 API Key 和 Secret
