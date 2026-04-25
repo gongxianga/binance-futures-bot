@@ -177,31 +177,52 @@ class FuturesEngine:
             return False, str(e)
 
 
+def _symbol_to_okx(symbol):
+    """BTCUSDT -> BTC-USDT-SWAP"""
+    if symbol.endswith("USDT"):
+        return symbol[:-4] + "-USDT-SWAP"
+    return symbol
+
+
 def get_tickers():
-    # 优先用已认证的客户端（绕过地理限制）
+    """优先从 OKX 拉取行情（无地理限制），格式归一化为币安风格"""
+    try:
+        url = "https://www.okx.com/api/v5/market/tickers?instType=SWAP"
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "python-requests/2.28")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            resp = json.loads(r.read())
+        result = []
+        for d in resp.get("data", []):
+            if not d["instId"].endswith("-USDT-SWAP"):
+                continue
+            last    = float(d.get("last") or 0)
+            open24h = float(d.get("open24h") or 0)
+            if last == 0 or open24h == 0:
+                continue
+            chg_pct  = (last - open24h) / open24h * 100
+            vol_usdt = float(d.get("volCcy24h") or 0)
+            symbol   = d["instId"].replace("-USDT-SWAP", "") + "USDT"
+            result.append({
+                "symbol":             symbol,
+                "priceChangePercent": str(round(chg_pct, 4)),
+                "quoteVolume":        str(vol_usdt),
+                "lastPrice":          str(last),
+            })
+        if result:
+            return sorted(result, key=lambda x: float(x["quoteVolume"]), reverse=True)
+    except Exception as e:
+        add_log(f"OKX行情获取失败: {e}", "warn")
+
+    # 回退：已连接的币安客户端
     if engine and state["connected"]:
         try:
             data = engine.client.futures_ticker()
             return sorted([d for d in data if d["symbol"].endswith("USDT")],
                           key=lambda x: float(x["quoteVolume"]), reverse=True)
         except Exception as e:
-            add_log(f"客户端行情失败: {e}", "warn")
-
-    # 回退：直接 HTTP
-    for url in [
-        "https://fapi.binance.com/fapi/v1/ticker/24hr",
-        "https://fapi1.binance.com/fapi/v1/ticker/24hr",
-        "https://fapi2.binance.com/fapi/v1/ticker/24hr",
-    ]:
-        try:
-            req = urllib.request.Request(url)
-            req.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(req, timeout=10) as r:
-                data = json.loads(r.read())
-            return sorted([d for d in data if d["symbol"].endswith("USDT")],
-                          key=lambda x: float(x["quoteVolume"]), reverse=True)
-        except Exception:
-            continue
+            add_log(f"币安行情也失败: {e}", "warn")
     return []
 
 
@@ -212,14 +233,34 @@ def get_tickers():
 class SignalEngine:
     KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
 
+    # OKX bar 间隔映射
+    _OKX_BAR = {"1h": "1H", "4h": "4H", "1d": "1D", "15m": "15m", "1m": "1m"}
+
     def _klines(self, symbol, interval="1h", limit=50):
-        # 优先用已认证客户端
+        # 优先 OKX（无地理限制）
+        try:
+            inst_id = _symbol_to_okx(symbol)
+            bar     = self._OKX_BAR.get(interval, "1H")
+            url     = f"https://www.okx.com/api/v5/market/candles?instId={inst_id}&bar={bar}&limit={limit}"
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "python-requests/2.28")
+            req.add_header("Accept", "application/json")
+            with urllib.request.urlopen(req, timeout=6) as r:
+                resp = json.loads(r.read())
+            rows = resp.get("data", [])
+            if rows:
+                return list(reversed(rows))   # OKX 返回最新在前，翻转为旧→新
+        except Exception:
+            pass
+
+        # 回退：已连接的币安客户端
         if state["connected"]:
             try:
                 return self.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
             except Exception:
                 pass
-        # 回退直接 HTTP
+
+        # 回退：直接 HTTP
         try:
             url = f"{self.KLINE_URL}?symbol={symbol}&interval={interval}&limit={limit}"
             req = urllib.request.Request(url)
@@ -549,20 +590,27 @@ def api_positions():
 
 
 def _public_price(symbol):
-    """无需认证，直接调用币安合约公开行情接口"""
+    """无需认证获取实时价格，优先 OKX"""
     try:
-        url = f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={symbol.upper()}"
-        with urllib.request.urlopen(url, timeout=5) as resp:
-            data = json.loads(resp.read())
-            return float(data["price"])
+        inst_id = _symbol_to_okx(symbol.upper())
+        url = f"https://www.okx.com/api/v5/market/ticker?instId={inst_id}"
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "python-requests/2.28")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=5) as r:
+            resp = json.loads(r.read())
+            return float(resp["data"][0]["last"])
     except Exception:
+        pass
+    # 回退币安
+    for base in ["https://fapi.binance.com", "https://testnet.binancefuture.com"]:
         try:
-            url = f"https://testnet.binancefuture.com/fapi/v1/ticker/price?symbol={symbol.upper()}"
-            with urllib.request.urlopen(url, timeout=5) as resp:
-                data = json.loads(resp.read())
-                return float(data["price"])
+            url = f"{base}/fapi/v1/ticker/price?symbol={symbol.upper()}"
+            with urllib.request.urlopen(url, timeout=5) as r:
+                return float(json.loads(r.read())["price"])
         except Exception:
-            return None
+            continue
+    return None
 
 
 @app.route("/api/price/<symbol>")
