@@ -6,16 +6,15 @@
 <title>登录 — 币安合约交易系统</title>
 <style>
 :root {
-  --bg:     #181410;
-  --bg2:    #211c16;
-  --bg3:    #2a231b;
-  --border: rgba(200,140,60,.25);
-  --text:   #ddd0b8;
-  --muted:  #8a7458;
-  --gold:   #c8941a;
-  --orange: #c06418;
-  --green:  #3aaa60;
-  --red:    #c44040;
+  --bg:     #f0f2f5;
+  --panel:  #ffffff;
+  --border: #dde1ea;
+  --text:   #1a1d2b;
+  --muted:  #8892a4;
+  --blue:   #2563eb;
+  --blue2:  #1d4ed8;
+  --green:  #16a34a;
+  --red:    #dc2626;
   --font-mono: 'Consolas','SF Mono','Courier New',monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,125 +22,83 @@ body {
   font-family: var(--font-mono);
   background: var(--bg); color: var(--text);
   min-height: 100vh; display: flex;
-  align-items: center; justify-content: center; overflow: hidden;
-}
-body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background-image:
-    linear-gradient(rgba(255,160,30,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,160,30,.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: gdrift 25s linear infinite;
-}
-@keyframes gdrift { 0%{background-position:0 0} 100%{background-position:40px 40px} }
-body::after {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,140,20,.007) 3px, rgba(255,140,20,.007) 4px);
+  align-items: center; justify-content: center;
 }
 
-.wrap { position: relative; z-index: 1; width: 100%; max-width: 400px; padding: 16px; }
+.wrap { width: 100%; max-width: 400px; padding: 16px; }
 
 .box {
-  position: relative;
-  background: rgba(19,16,10,.97);
+  background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 40px 36px;
-  box-shadow: 0 0 60px rgba(255,140,20,.1), 0 20px 80px rgba(0,0,0,.9), inset 0 0 60px rgba(255,160,30,.015);
+  box-shadow: 0 4px 24px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
 }
-/* 四角装饰 */
-.box::before, .box::after, .c3, .c4 {
-  content: ''; position: absolute; width: 18px; height: 18px;
-  border-color: var(--gold); border-style: solid;
-}
-.box::before { top:-1px;  left:-1px;  border-width: 2px 0 0 2px; }
-.box::after  { top:-1px;  right:-1px; border-width: 2px 2px 0 0; }
-.c3 { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
-.c4 { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
 
-/* 顶部光线 */
-.top-glow {
-  position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  animation: tglow 3s ease-in-out infinite;
-}
-@keyframes tglow { 0%,100%{opacity:.4} 50%{opacity:1;box-shadow:0 0 8px var(--gold)} }
-
-.logo { text-align: center; margin-bottom: 34px; }
+.logo { text-align: center; margin-bottom: 32px; }
 .logo-icon {
   width: 54px; height: 54px; margin: 0 auto 14px;
-  background: rgba(255,184,48,.1);
-  border: 1px solid rgba(255,184,48,.5);
-  border-radius: 10px;
+  background: rgba(37,99,235,.1);
+  border: 1px solid rgba(37,99,235,.25);
+  border-radius: 12px;
   display: flex; align-items: center; justify-content: center; font-size: 24px;
-  box-shadow: 0 0 20px rgba(255,184,48,.3), inset 0 0 20px rgba(255,184,48,.05);
-  animation: lglow 3s ease-in-out infinite;
-}
-@keyframes lglow {
-  0%,100%{box-shadow:0 0 20px rgba(255,184,48,.3),inset 0 0 20px rgba(255,184,48,.05)}
-  50%    {box-shadow:0 0 40px rgba(255,184,48,.6),inset 0 0 30px rgba(255,184,48,.1)}
 }
 .logo h1 {
-  font-size: 15px; font-weight: 700; color: var(--gold);
-  letter-spacing: 3px; margin-bottom: 5px;
+  font-size: 15px; font-weight: 700; color: var(--text);
+  letter-spacing: 2px; margin-bottom: 5px;
 }
 .logo p { font-size: 10px; color: var(--muted); letter-spacing: 2px; }
 
 .form-group { margin-bottom: 18px; }
-.form-group label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 7px; letter-spacing: 1.5px; }
+.form-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 7px; letter-spacing: 1px; font-weight: 600; }
 .inp {
   width: 100%;
-  background: rgba(255,160,30,.04); border: 1px solid rgba(255,160,30,.2);
-  border-radius: 4px; padding: 12px 14px; color: var(--text);
-  font-size: 13px; outline: none; transition: all .2s; font-family: var(--font-mono); letter-spacing: 1px;
+  background: #f7f8fa; border: 1px solid var(--border);
+  border-radius: 6px; padding: 11px 14px; color: var(--text);
+  font-size: 13px; outline: none; transition: all .2s; font-family: var(--font-mono);
 }
-.inp:focus { border-color: var(--gold); background: rgba(255,184,48,.07); box-shadow: 0 0 0 2px rgba(255,184,48,.14), 0 0 16px rgba(255,184,48,.18); }
+.inp:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
 .inp::placeholder { color: var(--muted); }
 
 .captcha-row { display: flex; gap: 10px; align-items: flex-end; }
 .captcha-row .inp { flex: 1; }
 .captcha-img {
-  width: 110px; height: 42px; border: 1px solid rgba(255,160,30,.2);
-  border-radius: 4px; cursor: pointer; overflow: hidden;
-  background: rgba(255,160,30,.04); transition: all .2s;
+  width: 110px; height: 40px; border: 1px solid var(--border);
+  border-radius: 6px; cursor: pointer; overflow: hidden;
+  background: #f7f8fa; transition: border-color .2s;
 }
-.captcha-img:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,184,48,.3); }
+.captcha-img:hover { border-color: var(--blue); }
 .captcha-img img { width: 100%; height: 100%; display: block; }
 
 .btn {
   width: 100%;
-  background: rgba(255,184,48,.1); color: var(--gold);
-  border: 1px solid rgba(255,184,48,.4); border-radius: 4px;
-  padding: 13px; font-size: 12px; font-weight: 700; cursor: pointer;
-  transition: all .2s; margin-top: 8px;
-  font-family: var(--font-mono); letter-spacing: 3px;
-  box-shadow: 0 0 12px rgba(255,184,48,.15);
+  background: var(--blue); color: #fff;
+  border: none; border-radius: 6px;
+  padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background .2s, transform .1s; margin-top: 8px;
+  font-family: var(--font-mono); letter-spacing: 2px;
 }
-.btn:hover { background: rgba(255,184,48,.18); box-shadow: 0 0 24px rgba(255,184,48,.45); transform: translateY(-1px); }
-.btn:active { transform: translateY(0); opacity: .9; }
-.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn:hover { background: var(--blue2); }
+.btn:active { transform: scale(.99); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .alert {
-  padding: 10px 14px; border-radius: 4px; font-size: 11px;
+  padding: 10px 14px; border-radius: 6px; font-size: 11px;
   margin-bottom: 18px; display: none; letter-spacing: .5px;
 }
-.alert.error   { background: rgba(255,58,58,.08); border: 1px solid rgba(255,58,58,.3); color: var(--red); }
-.alert.success { background: rgba(82,232,122,.08); border: 1px solid rgba(82,232,122,.3); color: var(--green); }
+.alert.error   { background: rgba(220,38,38,.06); border: 1px solid rgba(220,38,38,.2); color: var(--red); }
+.alert.success { background: rgba(22,163,74,.06); border: 1px solid rgba(22,163,74,.2); color: var(--green); }
 
 .footer {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin-top: 22px; font-size: 9px; color: var(--muted); letter-spacing: 1.5px;
+  margin-top: 22px; font-size: 10px; color: var(--muted); letter-spacing: 1px;
 }
-.dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: blink 2s ease-in-out infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="box">
-    <div class="top-glow"></div>
-    <div class="c3"></div><div class="c4"></div>
-
     <div class="logo">
       <div class="logo-icon">&#9889;</div>
       <h1>币安合约交易系统</h1>

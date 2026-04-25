@@ -7,32 +7,29 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
 :root {
-  --bg:      #181410;
-  --bg2:     #211c16;
-  --bg3:     #2a231b;
-  --bg4:     #332b20;
-  --panel:   rgba(30,24,17,.96);
-  --border:  rgba(200,140,60,.22);
-  --border2: rgba(200,140,60,.12);
-  --text:    #ddd0b8;
-  --muted:   #8a7458;
-  --gold:    #c8941a;
-  --orange:  #c06418;
-  --red:     #c44040;
-  --green:   #3aaa60;
-  --amber:   #c8a030;
-  --brown:   #a06828;
-  --glow-g:  0 0 6px rgba(200,148,26,.3);
-  --glow-o:  0 0 6px rgba(192,100,24,.3);
-  --glow-r:  0 0 6px rgba(196,64,64,.3);
-  --glow-gr: 0 0 6px rgba(58,170,96,.3);
-  --shadow:  0 4px 24px rgba(0,0,0,.6);
+  --bg:      #f0f2f5;
+  --bg2:     #ffffff;
+  --bg3:     #f7f8fa;
+  --bg4:     #eef0f4;
+  --panel:   #ffffff;
+  --border:  #dde1ea;
+  --border2: #e8ebf0;
+  --text:    #1a1d2b;
+  --muted:   #8892a4;
+  --blue:    #2563eb;
+  --blue2:   #1d4ed8;
+  --green:   #16a34a;
+  --red:     #dc2626;
+  --yellow:  #d97706;
+  --purple:  #7c3aed;
+  --shadow:  0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --shadow2: 0 2px 8px rgba(0,0,0,.10);
   --font-mono: 'Consolas','SF Mono','Courier New',monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 13px;
@@ -42,95 +39,73 @@ body {
   overflow: hidden;
 }
 
-/* 背景纹理 */
-body::before {
-  content: '';
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background-image:
-    linear-gradient(rgba(200,140,60,.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200,140,60,.018) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: rgba(255,160,30,.3); border-radius: 2px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cdd2dc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #b0b8c8; }
 
 /* ── 顶栏 ── */
 .hdr {
-  position: relative; z-index: 10;
-  background: linear-gradient(90deg, var(--bg2), rgba(255,120,20,.05) 50%, var(--bg2));
+  background: var(--bg2);
   border-bottom: 1px solid var(--border);
   padding: 0 18px;
   display: flex; align-items: center; gap: 12px;
-  height: 56px; flex-shrink: 0;
-  box-shadow: 0 2px 30px rgba(255,120,20,.08), inset 0 -1px 0 rgba(255,160,30,.15);
+  height: 54px; flex-shrink: 0;
+  box-shadow: 0 1px 0 var(--border), 0 2px 8px rgba(0,0,0,.04);
 }
 .logo-box { display: flex; align-items: center; gap: 10px; }
 .logo-icon {
-  width: 36px; height: 36px; flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(255,184,48,.15), rgba(255,122,32,.25));
-  border: 1px solid rgba(255,184,48,.5);
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
   border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; font-size: 17px;
-  box-shadow: var(--glow-g), inset 0 0 10px rgba(255,184,48,.08);
-  animation: logo-glow 3s ease-in-out infinite;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,.3);
 }
-@keyframes logo-glow {
-  0%,100% { box-shadow: var(--glow-g); }
-  50%      { box-shadow: 0 0 14px rgba(200,148,26,.45); }
-}
-.logo-title { font-size: 14px; font-weight: 700; color: var(--gold); letter-spacing: 2px; }
-.logo-sub   { font-size: 10px; color: var(--muted); letter-spacing: 1px; font-family: var(--font-mono); }
-.hdr-sep    { width: 1px; height: 28px; background: var(--border2); flex-shrink: 0; }
+.logo-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: .3px; }
+.logo-sub   { font-size: 11px; color: var(--muted); }
+.hdr-sep    { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
 .hdr-right  { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
 .inp {
-  background: rgba(255,160,30,.05); border: 1px solid var(--border);
-  border-radius: 6px; padding: 6px 11px; color: var(--text);
-  font-size: 12px; outline: none; transition: all .2s; font-family: var(--font-mono);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 7px; padding: 6px 11px; color: var(--text);
+  font-size: 12px; outline: none; transition: all .18s;
 }
-.inp:focus { border-color: var(--gold); background: rgba(255,184,48,.08); box-shadow: 0 0 0 2px rgba(255,184,48,.15); }
+.inp:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 .inp::placeholder { color: var(--muted); }
 
 .chk { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.chk:hover { color: var(--gold); }
+.chk:hover { color: var(--text); }
 
 .status-badge {
-  font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 4px;
-  font-family: var(--font-mono); letter-spacing: 1px;
+  font-size: 11px; font-weight: 600; padding: 4px 11px;
+  border-radius: 20px; letter-spacing: .3px;
 }
-.status-badge.ok  {
-  color: var(--green); background: rgba(82,232,122,.08); border: 1px solid rgba(82,232,122,.3);
-  box-shadow: var(--glow-gr); animation: blink-green 2s ease-in-out infinite;
-}
-.status-badge.err { color: var(--red); background: rgba(255,58,58,.08); border: 1px solid rgba(255,58,58,.25); }
-@keyframes blink-green { 0%,100%{box-shadow:var(--glow-gr)} 50%{box-shadow:0 0 18px rgba(82,232,122,.7)} }
+.status-badge.ok  { color: var(--green); background: #dcfce7; }
+.status-badge.err { color: var(--red);   background: #fee2e2; }
 
 .user-chip {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(255,160,30,.06); border: 1px solid var(--border);
-  border-radius: 4px; padding: 4px 11px; font-size: 11px;
-  font-family: var(--font-mono); color: var(--gold);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 12px; color: var(--text); font-weight: 500;
 }
 .user-dot {
   width: 6px; height: 6px; background: var(--green);
-  border-radius: 50%; box-shadow: var(--glow-gr);
-  animation: blink 2s ease-in-out infinite;
+  border-radius: 50%;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
 /* ── 主体 ── */
 .body {
-  position: relative; z-index: 1;
   display: flex; flex-direction: row;
   padding: 8px; gap: 0;
   flex: 1; overflow: hidden; min-height: 0;
 }
 
-.panel-left  { width: 295px; min-width: 220px; display: flex; flex-direction: column; flex-shrink: 0; gap: 7px; }
+.panel-left  { width: 290px; min-width: 220px; display: flex; flex-direction: column; flex-shrink: 0; gap: 7px; }
 .panel-main  { flex: 1; min-width: 380px; display: flex; flex-direction: column; overflow: hidden; }
-.panel-right { width: 255px; min-width: 180px; flex-shrink: 0; display: flex; flex-direction: column; }
+.panel-right { width: 252px; min-width: 180px; flex-shrink: 0; display: flex; flex-direction: column; }
 
 /* 分隔条 */
 .resizer-col {
@@ -138,112 +113,95 @@ body::before {
   display: flex; align-items: center; justify-content: center;
 }
 .resizer-col::after {
-  content: ''; width: 2px; height: 48px;
-  background: var(--border2); border-radius: 1px; transition: all .2s;
+  content: ''; width: 3px; height: 44px;
+  background: var(--border2); border-radius: 2px; transition: all .18s;
 }
-.resizer-col:hover::after, .resizer-col.dragging::after { background: var(--gold); height: 64px; box-shadow: var(--glow-g); }
+.resizer-col:hover::after, .resizer-col.dragging::after { background: var(--blue); height: 60px; }
 .resizer-row {
   height: 10px; cursor: row-resize; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .resizer-row::after {
-  content: ''; height: 2px; width: 48px;
-  background: var(--border2); border-radius: 1px; transition: all .2s;
+  content: ''; height: 3px; width: 44px;
+  background: var(--border2); border-radius: 2px; transition: all .18s;
 }
-.resizer-row:hover::after, .resizer-row.dragging::after { background: var(--gold); width: 64px; box-shadow: var(--glow-g); }
+.resizer-row:hover::after, .resizer-row.dragging::after { background: var(--blue); width: 60px; }
 
 /* ── 卡片 ── */
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px; overflow: hidden;
+  border-radius: 10px;
+  overflow: hidden;
   box-shadow: var(--shadow);
-  position: relative;
 }
 .card-hdr {
-  padding: 9px 14px; font-size: 10px; font-weight: 700;
-  color: var(--gold); border-bottom: 1px solid var(--border2);
+  padding: 9px 14px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border2);
   display: flex; align-items: center; gap: 8px;
-  letter-spacing: 2px; text-transform: none;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: rgba(255,160,30,.03);
+  background: var(--bg3);
 }
 .hdr-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold); box-shadow: var(--glow-g);
-  animation: blink 2s ease-in-out infinite;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--blue); flex-shrink: 0;
 }
-.hdr-dot.green  { background: var(--green);  box-shadow: var(--glow-gr); }
-.hdr-dot.orange { background: var(--orange); box-shadow: var(--glow-o); }
-.hdr-dot.off    { background: var(--muted);  box-shadow: none; animation: none; }
+.hdr-dot.green  { background: var(--green); }
+.hdr-dot.yellow { background: var(--yellow); }
+.hdr-dot.red    { background: var(--red); }
 .card-hdr-r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* ── 账户卡片 ── */
+/* ── 账户 ── */
 .acc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px; }
 .acc-chip {
-  background: rgba(255,160,30,.04); border: 1px solid var(--border2);
-  border-radius: 6px; padding: 10px 10px 8px; position: relative; overflow: hidden;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 10px 8px;
 }
-.acc-chip::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .25;
-}
-.acc-chip label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; letter-spacing: 1px; }
+.acc-chip label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
 .acc-chip .val { font-size: 14px; font-weight: 700; color: var(--green); font-family: var(--font-mono); }
 .acc-chip .val.neg     { color: var(--red); }
-.acc-chip .val.neutral { color: var(--gold); }
+.acc-chip .val.neutral { color: var(--blue); }
 
 /* ── 表单 ── */
 .form-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
 .form-row label { font-size: 11px; color: var(--muted); width: 60px; text-align: right; flex-shrink: 0; }
 .form-inp {
-  flex: 1; background: rgba(255,160,30,.04); border: 1px solid var(--border);
-  border-radius: 5px; padding: 7px 10px; color: var(--text);
-  font-size: 12px; outline: none; transition: all .2s; font-family: var(--font-mono);
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 10px; color: var(--text);
+  font-size: 12px; outline: none; transition: all .18s;
 }
-.form-inp:focus { border-color: var(--gold); background: rgba(255,184,48,.07); box-shadow: 0 0 0 2px rgba(255,184,48,.12); }
+.form-inp:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
 .form-inp::placeholder { color: var(--muted); }
 select.form-inp { cursor: pointer; }
-select.form-inp option { background: var(--bg3); }
 .sym-row { flex: 1; display: flex; gap: 6px; align-items: center; }
 .cur-price {
   font-family: var(--font-mono); font-size: 20px; font-weight: 700;
-  color: var(--amber); text-align: center; margin: -2px 0 10px;
-  letter-spacing: 1px;
+  color: var(--yellow); text-align: center; margin: -2px 0 10px;
 }
 
 /* ── 按钮 ── */
 .btn {
-  border: 1px solid transparent; border-radius: 5px; padding: 7px 14px;
-  font-size: 12px; font-weight: 700; cursor: pointer;
-  transition: all .18s; white-space: nowrap;
+  border: 1px solid transparent; border-radius: 7px; padding: 7px 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
 }
-.btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
-.btn:active { transform: translateY(0); filter: brightness(.9); }
-.btn:disabled { opacity: .3; cursor: default; transform: none; filter: none; }
+.btn:hover { filter: brightness(.94); }
+.btn:active { filter: brightness(.88); }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
 .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.btn-long {
-  background: rgba(82,232,122,.1); color: var(--green);
-  border-color: rgba(82,232,122,.35); box-shadow: var(--glow-gr);
-}
-.btn-long:hover { background: rgba(82,232,122,.18); box-shadow: 0 0 18px rgba(82,232,122,.55); }
-.btn-short {
-  background: rgba(255,58,58,.1); color: var(--red);
-  border-color: rgba(255,58,58,.35); box-shadow: var(--glow-r);
-}
-.btn-short:hover { background: rgba(255,58,58,.18); box-shadow: 0 0 18px rgba(255,58,58,.55); }
-.btn-primary {
-  background: rgba(255,184,48,.1); color: var(--gold);
-  border-color: rgba(255,184,48,.4); box-shadow: var(--glow-g);
-}
-.btn-primary:hover { background: rgba(255,184,48,.18); box-shadow: 0 0 18px rgba(255,184,48,.55); }
-.btn-ghost { background: rgba(255,160,30,.05); color: var(--muted); border-color: var(--border); }
-.btn-ghost:hover { color: var(--gold); border-color: var(--gold); }
-.btn-warn { background: rgba(255,122,32,.08); color: var(--orange); border-color: rgba(255,122,32,.3); }
-.btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 4px; }
+.btn-long    { background: #dcfce7; color: var(--green); border-color: #bbf7d0; }
+.btn-long:hover  { background: #bbf7d0; }
+.btn-short   { background: #fee2e2; color: var(--red);   border-color: #fecaca; }
+.btn-short:hover { background: #fecaca; }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 1px 4px rgba(37,99,235,.25); }
+.btn-primary:hover { background: var(--blue2); }
+.btn-ghost   { background: var(--bg3); color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg4); color: var(--text); }
+.btn-warn    { background: #fef9c3; color: var(--yellow); border-color: #fde68a; }
+.btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
 .sep { border: none; border-top: 1px solid var(--border2); margin: 10px 0; }
 
-/* ── 主区域 ── */
+/* ── 主区：雷达 + 扫描 ── */
 .main-top { flex: 1; display: flex; flex-direction: row; gap: 0; overflow: hidden; min-height: 0; }
 .radar-card   { width: 44%; min-width: 260px; flex-shrink: 0; display: flex; flex-direction: column; }
 .scanner-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -252,21 +210,17 @@ select.form-inp option { background: var(--bg3); }
 .radar-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 #radar-chart { width: 100%; height: 100%; }
 .radar-ring {
-  position: absolute; border-radius: 50%; border: 1px solid;
+  position: absolute; border-radius: 50%; border: 1px solid rgba(37,99,235,.15);
   pointer-events: none; top: 50%; left: 50%;
 }
-.radar-ring:nth-child(1) { width: 80px;  height: 80px;  margin: -40px 0 0 -40px;  border-color: rgba(255,184,48,.4);  animation: rpulse 3.2s ease-out infinite; }
-.radar-ring:nth-child(2) { width: 160px; height: 160px; margin: -80px 0 0 -80px;  border-color: rgba(255,184,48,.22); animation: rpulse 3.2s ease-out infinite .8s; }
-.radar-ring:nth-child(3) { width: 250px; height: 250px; margin:-125px 0 0 -125px; border-color: rgba(255,184,48,.12); animation: rpulse 3.2s ease-out infinite 1.6s; }
-.radar-ring:nth-child(4) { width: 340px; height: 340px; margin:-170px 0 0 -170px; border-color: rgba(255,184,48,.05); animation: rpulse 3.2s ease-out infinite 2.4s; }
-@keyframes rpulse { 0%{opacity:.9;transform:scale(.8)} 100%{opacity:0;transform:scale(1.4)} }
-
+.radar-ring:nth-child(1) { width: 80px;  height: 80px;  margin:-40px  0 0 -40px;  animation: rpulse 3.5s ease-out infinite; }
+.radar-ring:nth-child(2) { width: 160px; height: 160px; margin:-80px  0 0 -80px;  animation: rpulse 3.5s ease-out infinite .9s; border-color: rgba(37,99,235,.08); }
+.radar-ring:nth-child(3) { width: 260px; height: 260px; margin:-130px 0 0 -130px; animation: rpulse 3.5s ease-out infinite 1.8s; border-color: rgba(37,99,235,.04); }
+@keyframes rpulse { 0%{opacity:.8;transform:scale(.85)} 100%{opacity:0;transform:scale(1.35)} }
 .scan-sweep {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: conic-gradient(from 0deg at 50% 50%,
-    transparent 0deg, rgba(255,184,48,.04) 20deg, rgba(255,184,48,.1) 40deg, transparent 60deg);
-  animation: sweep 4s linear infinite;
-  display: none; pointer-events: none;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(37,99,235,.04) 20deg, rgba(37,99,235,.09) 40deg, transparent 60deg);
+  animation: sweep 4s linear infinite; display: none; pointer-events: none;
 }
 .scan-sweep.active { display: block; }
 @keyframes sweep { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -275,81 +229,79 @@ select.form-inp option { background: var(--bg3); }
 .scan-settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; margin-bottom: 9px; }
 .scan-field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
 .scan-ctrl { display: flex; gap: 8px; align-items: center; }
-.countdown { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+.countdown { font-size: 11px; color: var(--muted); }
 .progress-wrap { flex: 1; }
-.progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; font-family: var(--font-mono); }
-.progress-bar-bg { background: rgba(255,160,30,.06); border: 1px solid var(--border2); border-radius: 2px; height: 4px; overflow: hidden; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--orange)); border-radius: 2px; width: 0%; transition: width .3s; box-shadow: var(--glow-g); }
+.progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.progress-bar-bg { background: var(--bg4); border: 1px solid var(--border2); border-radius: 3px; height: 5px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); border-radius: 3px; width: 0%; transition: width .3s; }
 
 /* 信号卡片 */
 .signal-grid { display: flex; flex-direction: column; gap: 5px; }
 .signal-card {
-  background: rgba(255,160,30,.03); border: 1px solid var(--border2);
-  border-radius: 6px; padding: 9px 12px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 9px 12px;
   display: flex; align-items: center; gap: 9px;
-  transition: all .2s; position: relative; overflow: hidden;
+  transition: all .15s; position: relative; overflow: hidden;
 }
-.signal-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; bottom: 0; }
-.signal-card.long  { border-color: rgba(82,232,122,.2); }
-.signal-card.long::before  { background: var(--green); box-shadow: var(--glow-gr); }
-.signal-card.short { border-color: rgba(255,58,58,.2); }
-.signal-card.short::before { background: var(--red); box-shadow: var(--glow-r); }
-.signal-card:hover { background: rgba(255,184,48,.05); border-color: rgba(255,184,48,.3); transform: translateX(3px); }
-.sig-sym { font-size: 13px; font-weight: 700; color: var(--gold); min-width: 76px; font-family: var(--font-mono); }
-.sig-dir { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; }
-.sig-dir.long  { background: rgba(82,232,122,.1); color: var(--green); border: 1px solid rgba(82,232,122,.3); }
-.sig-dir.short { background: rgba(255,58,58,.1);  color: var(--red);   border: 1px solid rgba(255,58,58,.3); }
-.sig-stars { color: var(--amber); font-size: 13px; letter-spacing: -1px; }
+.signal-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; bottom: 0; border-radius: 8px 0 0 8px; }
+.signal-card.long  { }
+.signal-card.long::before  { background: var(--green); }
+.signal-card.short::before { background: var(--red); }
+.signal-card:hover { background: var(--bg4); border-color: var(--border); box-shadow: var(--shadow2); }
+.sig-sym { font-size: 13px; font-weight: 700; color: var(--text); min-width: 76px; }
+.sig-dir { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; }
+.sig-dir.long  { background: #dcfce7; color: var(--green); }
+.sig-dir.short { background: #fee2e2; color: var(--red); }
+.sig-stars { color: var(--yellow); font-size: 13px; letter-spacing: -1px; }
 .sig-price { font-size: 11px; color: var(--muted); margin-left: auto; font-family: var(--font-mono); }
 .sig-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
-.sig-tag { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(255,160,30,.05); color: var(--muted); border: 1px solid var(--border2); }
-.sig-tag.up { background: rgba(82,232,122,.08);  color: var(--green); border-color: rgba(82,232,122,.25); }
-.sig-tag.dn { background: rgba(255,58,58,.08);   color: var(--red);   border-color: rgba(255,58,58,.25); }
+.sig-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--bg4); color: var(--muted); border: 1px solid var(--border2); }
+.sig-tag.up { background: #dcfce7; color: var(--green); border-color: #bbf7d0; }
+.sig-tag.dn { background: #fee2e2; color: var(--red);   border-color: #fecaca; }
 .sig-trade { flex-shrink: 0; }
 .empty-state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 12px; }
-.empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: .35; display: block; }
+.empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: .5; display: block; }
 
 /* 持仓 */
 .positions-card { flex-shrink: 0; height: 165px; overflow: hidden; }
 
 /* 表格 */
 .tbl-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: var(--font-mono); }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
 th {
-  background: rgba(255,160,30,.04); padding: 6px 8px;
-  text-align: center; font-weight: 700; color: var(--gold);
+  background: var(--bg3); padding: 7px 8px;
+  text-align: center; font-weight: 600; color: var(--muted);
   white-space: nowrap; border-bottom: 1px solid var(--border2);
-  font-size: 10px; letter-spacing: .5px;
+  font-size: 10px;
 }
-td { padding: 7px 8px; text-align: center; border-bottom: 1px solid var(--border2); white-space: nowrap; }
-tr:hover td { background: rgba(255,160,30,.03); }
-.green  { color: var(--green); }
-.red    { color: var(--red); }
-.yellow { color: var(--amber); }
+td { padding: 7px 8px; text-align: center; border-bottom: 1px solid var(--border2); white-space: nowrap; color: var(--text); }
+tr:hover td { background: var(--bg3); }
+.green  { color: var(--green) !important; font-weight: 600; }
+.red    { color: var(--red)   !important; font-weight: 600; }
+.yellow { color: var(--yellow); }
 .muted  { color: var(--muted); }
-.accent { color: var(--gold); font-weight: 700; }
+.accent { color: var(--blue); font-weight: 600; }
 
 /* 日志 */
 .log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .log-box {
   font-family: var(--font-mono); font-size: 11px;
   overflow-y: auto; padding: 10px 12px; flex: 1; line-height: 1.7;
-  color: rgba(255,184,48,.55);
+  color: var(--text);
 }
 .log-entry { margin-bottom: 0; }
-.ts { color: rgba(255,160,30,.2); margin-right: 6px; font-size: 10px; }
+.ts { color: var(--muted); margin-right: 6px; font-size: 10px; }
 .log-box .ok   { color: var(--green); }
-.log-box .err  { color: var(--red); text-shadow: var(--glow-r); }
-.log-box .warn { color: var(--amber); }
-.log-box .info { color: rgba(255,184,48,.45); }
+.log-box .err  { color: var(--red); font-weight: 600; }
+.log-box .warn { color: var(--yellow); }
+.log-box .info { color: var(--muted); }
 
 /* Toast */
 #toast {
   position: fixed; bottom: 20px; right: 20px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px 16px; font-size: 12px;
-  font-family: var(--font-mono);
-  box-shadow: var(--shadow), var(--glow-g);
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px; font-size: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
   display: none; z-index: 999; max-width: 320px;
   animation: slideUp .2s ease;
 }
@@ -364,7 +316,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
     <div class="logo-icon">&#9889;</div>
     <div>
       <div class="logo-title">币安合约交易系统</div>
-      <div class="logo-sub">v4.0 &nbsp;&#9679;&nbsp; FUTURES BOT</div>
+      <div class="logo-sub">v4.0 &nbsp;·&nbsp; Futures Bot</div>
     </div>
   </div>
 
@@ -374,7 +326,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
   <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:144px">
   <label class="chk"><input type="checkbox" id="chk-testnet" checked> 测试网</label>
   <button class="btn btn-primary btn-sm" id="btn-connect" onclick="connect()">连 接</button>
-  <span class="status-badge err" id="conn-status">&#9679; 未连接</span>
+  <span class="status-badge err" id="conn-status">● 未连接</span>
 
   <div class="hdr-sep"></div>
 
@@ -396,7 +348,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
 <!-- 主体 -->
 <div class="body">
 
-  <!-- 左栏：账户 + 交易 -->
+  <!-- 左栏 -->
   <div class="panel-left">
 
     <div class="card">
@@ -448,7 +400,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
           <button class="btn btn-long"  onclick="manualOrder('BUY')">&#9650; 做 多</button>
           <button class="btn btn-short" onclick="manualOrder('SELL')">&#9660; 做 空</button>
         </div>
-        <button class="btn btn-warn btn-sm" style="width:100%" onclick="cancelOrders()">撤销当前交易对全部挂单</button>
+        <button class="btn btn-warn btn-sm" style="width:100%" onclick="cancelOrders()">撤销当前交易对挂单</button>
       </div>
     </div>
 
@@ -456,7 +408,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
 
   <div class="resizer-col" id="resizer-left"></div>
 
-  <!-- 中栏：雷达 + 扫描 (上) + 持仓 (下) -->
+  <!-- 中栏 -->
   <div class="panel-main">
 
     <div class="main-top">
@@ -464,15 +416,14 @@ tr:hover td { background: rgba(255,160,30,.03); }
       <!-- 市场雷达 -->
       <div class="card radar-card">
         <div class="card-hdr">
-          <div class="hdr-dot" id="radar-dot"></div> 市场雷达
-          <span style="font-size:9px;color:var(--muted);font-weight:400" id="radar-ts"></span>
+          <div class="hdr-dot"></div> 市场雷达
+          <span style="font-size:10px;color:var(--muted);font-weight:400" id="radar-ts"></span>
           <div class="card-hdr-r">
             <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
           </div>
         </div>
         <div class="radar-wrap">
           <div id="radar-chart"></div>
-          <div class="radar-ring"></div>
           <div class="radar-ring"></div>
           <div class="radar-ring"></div>
           <div class="radar-ring"></div>
@@ -485,16 +436,15 @@ tr:hover td { background: rgba(255,160,30,.03); }
       <!-- 策略扫描 -->
       <div class="card scanner-card">
         <div class="card-hdr">
-          <div class="hdr-dot off" id="scan-dot"></div>
+          <div class="hdr-dot" id="scan-dot" style="background:var(--muted)"></div>
           策略扫描
-          <span style="font-size:9px;color:var(--muted);font-weight:400" id="scan-ts"></span>
+          <span style="font-size:10px;color:var(--muted);font-weight:400" id="scan-ts"></span>
           <div class="card-hdr-r">
             <span class="countdown" id="scan-status">未启动</span>
           </div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-          <!-- 参数设置 -->
-          <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border2);background:rgba(255,160,30,.02)">
+          <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border2);background:var(--bg3)">
             <div class="scan-settings-grid">
               <div class="scan-field">
                 <label>最低信号分</label>
@@ -538,7 +488,6 @@ tr:hover td { background: rgba(255,160,30,.03); }
               </div>
             </div>
           </div>
-          <!-- 扫描结果 -->
           <div style="flex:1;overflow-y:auto;padding:10px 12px">
             <div class="empty-state" id="scan-empty">
               <span class="empty-icon">&#128225;</span>
@@ -582,7 +531,7 @@ tr:hover td { background: rgba(255,160,30,.03); }
   <div class="panel-right">
     <div class="card log-panel">
       <div class="card-hdr">
-        <div class="hdr-dot orange"></div> 操作日志
+        <div class="hdr-dot yellow"></div> 操作日志
         <div class="card-hdr-r">
           <button class="btn btn-ghost btn-sm" onclick="clearLog()">清空</button>
         </div>
@@ -604,12 +553,8 @@ let signalMap   = {};
 let scanRunning = false;
 
 window.addEventListener('load', () => {
-  loadCurrentUser();
-  initChart();
-  loadTickers();
-  loadStatus();
-  loadLog();
-  loadSavedConfig();
+  loadCurrentUser(); initChart(); loadTickers(); loadStatus();
+  loadLog(); loadSavedConfig();
   setInterval(autoRefresh,    5000);
   setInterval(loadLog,        3000);
   setInterval(loadScanStatus, 1000);
@@ -618,79 +563,74 @@ window.addEventListener('load', () => {
 });
 
 async function loadCurrentUser() {
-  const r = await fetch('/api/auth/status').then(r => r.json()).catch(() => ({}));
-  if (r.authenticated) {
-    document.getElementById('current-user').textContent = r.username;
-  } else {
-    window.location.href = '/login';
-  }
+  const r = await fetch('/api/auth/status').then(r=>r.json()).catch(()=>({}));
+  if (r.authenticated) document.getElementById('current-user').textContent = r.username;
+  else window.location.href = '/login';
 }
 async function logout() {
   if (!confirm('确认退出登录？')) return;
-  await fetch('/api/auth/logout', { method: 'POST' });
+  await fetch('/api/auth/logout', {method:'POST'});
   window.location.href = '/login';
 }
 async function loadStatus() {
-  const r = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+  const r = await fetch('/api/status').then(r=>r.json()).catch(()=>({}));
   if (r.connected) { setConnected(true); autoRefresh(); }
 }
 async function loadSavedConfig() {
-  const cfg = await fetch('/api/config').then(r => r.json()).catch(() => ({}));
+  const cfg = await fetch('/api/config').then(r=>r.json()).catch(()=>({}));
   if (cfg.api_key) document.getElementById('inp-key').value = cfg.api_key;
   if (cfg.testnet !== undefined) document.getElementById('chk-testnet').checked = cfg.testnet;
 }
 async function connect() {
-  const key    = document.getElementById('inp-key').value.trim();
+  const key = document.getElementById('inp-key').value.trim();
   const secret = document.getElementById('inp-secret').value.trim();
-  const test   = document.getElementById('chk-testnet').checked;
+  const test = document.getElementById('chk-testnet').checked;
   if (!key || !secret) { toast('请填写 API Key 和 Secret', 'err'); return; }
   const btn = document.getElementById('btn-connect');
   btn.disabled = true; btn.textContent = '连接中...';
   const r = await fetch('/api/connect', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ api_key: key, api_secret: secret, testnet: test })
-  }).then(r => r.json());
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({api_key:key, api_secret:secret, testnet:test})
+  }).then(r=>r.json());
   btn.disabled = false; btn.textContent = '连 接';
   if (r.ok) { setConnected(true); toast('连接成功', 'ok'); autoRefresh(); }
-  else { setConnected(false); toast('连接失败: ' + r.msg, 'err'); }
+  else { setConnected(false); toast('连接失败: '+r.msg, 'err'); }
 }
 function setConnected(ok) {
   const el = document.getElementById('conn-status');
-  el.className   = 'status-badge ' + (ok ? 'ok' : 'err');
+  el.className   = 'status-badge '+(ok?'ok':'err');
   el.textContent = ok ? '● 已连接' : '● 未连接';
 }
 async function autoRefresh() { await loadAccount(); await loadPositions(); }
 async function loadAccount() {
-  const r = await fetch('/api/account').then(r => r.json()).catch(() => ({}));
+  const r = await fetch('/api/account').then(r=>r.json()).catch(()=>({}));
   if (!r.ok) return;
-  document.getElementById('v-avail').textContent  = r.available.toFixed(2) + ' U';
-  document.getElementById('v-wallet').textContent = r.wallet.toFixed(2) + ' U';
+  document.getElementById('v-avail').textContent  = r.available.toFixed(2)+' U';
+  document.getElementById('v-wallet').textContent = r.wallet.toFixed(2)+' U';
   const el = document.getElementById('v-pnl');
-  el.textContent = (r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2) + ' U';
-  el.className   = 'val ' + (r.pnl >= 0 ? '' : 'neg');
+  el.textContent = (r.pnl>=0?'+':'')+r.pnl.toFixed(2)+' U';
+  el.className = 'val '+(r.pnl>=0?'':'neg');
 }
 async function loadPositions() {
-  const r = await fetch('/api/positions').then(r => r.json()).catch(() => ({ positions: [] }));
+  const r = await fetch('/api/positions').then(r=>r.json()).catch(()=>({positions:[]}));
   const tbody = document.getElementById('pos-tbody');
-  if (!r.positions.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>'; return;
-  }
-  tbody.innerHTML = r.positions.map(p => `
+  if (!r.positions.length) { tbody.innerHTML='<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>'; return; }
+  tbody.innerHTML = r.positions.map(p=>`
     <tr>
       <td class="accent">${p.symbol}</td>
       <td class="${p.side==='多'?'green':'red'}">${p.side==='多'?'多 ▲':'空 ▼'}</td>
       <td>${p.amt.toFixed(4)}</td><td>${p.entry.toFixed(4)}</td><td>${p.mark.toFixed(4)}</td>
       <td class="${p.pnl>=0?'green':'red'}">${p.pnl>=0?'+':''}${p.pnl.toFixed(2)}</td>
       <td class="${p.roe>=0?'green':'red'}">${p.roe>=0?'+':''}${p.roe.toFixed(2)}%</td>
-      <td style="color:var(--amber)">${p.leverage}x</td>
+      <td style="color:var(--yellow);font-weight:600">${p.leverage}x</td>
       <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
     </tr>`).join('');
 }
 async function getPrice() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
-  const r = await fetch('/api/price/' + sym).then(r => r.json()).catch(() => ({}));
+  const r = await fetch('/api/price/'+sym).then(r=>r.json()).catch(()=>({}));
   if (r.ok) document.getElementById('f-cprice').textContent = r.price.toFixed(4);
-  else toast('报价失败: ' + (r.msg || '请检查交易对名称'), 'err');
+  else toast('报价失败: '+(r.msg||'请检查交易对'), 'err');
 }
 function onOtypeChange() {
   document.getElementById('f-lprice').disabled = document.getElementById('f-otype').value !== 'LIMIT';
@@ -701,32 +641,26 @@ async function manualOrder(side) {
   const qty   = parseFloat(document.getElementById('f-qty').value);
   const lev   = parseInt(document.getElementById('f-lev').value);
   const lpx   = parseFloat(document.getElementById('f-lprice').value);
-  const cn    = side === 'BUY' ? '做多(买入)' : '做空(卖出)';
-  const extra = otype === 'LIMIT' ? '\n限价: ' + lpx : '';
-  if (!confirm('确认下单？\n交易对: ' + sym + '\n方向: ' + cn + '\n类型: ' + otype + '\n数量: ' + qty + '\n杠杆: ' + lev + 'x' + extra)) return;
-  const body = { symbol: sym, side, type: otype, qty, leverage: lev };
-  if (otype === 'LIMIT') body.price = lpx;
-  const r = await fetch('/api/order', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-  }).then(r => r.json());
-  if (r.ok) { toast('下单成功 ' + cn + ' ' + sym, 'ok'); autoRefresh(); }
-  else toast('下单失败: ' + r.msg, 'err');
+  const cn    = side==='BUY'?'做多(买入)':'做空(卖出)';
+  const extra = otype==='LIMIT'?'\n限价: '+lpx:'';
+  if (!confirm('确认下单？\n交易对: '+sym+'\n方向: '+cn+'\n类型: '+otype+'\n数量: '+qty+'\n杠杆: '+lev+'x'+extra)) return;
+  const body = {symbol:sym, side, type:otype, qty, leverage:lev};
+  if (otype==='LIMIT') body.price = lpx;
+  const r = await fetch('/api/order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
+  if (r.ok) { toast('下单成功 '+cn+' '+sym, 'ok'); autoRefresh(); }
+  else toast('下单失败: '+r.msg, 'err');
 }
 async function closePos(symbol) {
-  if (!confirm('确认平仓 ' + symbol + '？')) return;
-  const r = await fetch('/api/close', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol })
-  }).then(r => r.json());
-  if (r.ok) { toast('平仓成功: ' + symbol, 'ok'); autoRefresh(); }
-  else toast('平仓失败: ' + r.msg, 'err');
+  if (!confirm('确认平仓 '+symbol+'？')) return;
+  const r = await fetch('/api/close', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol})}).then(r=>r.json());
+  if (r.ok) { toast('平仓成功: '+symbol, 'ok'); autoRefresh(); }
+  else toast('平仓失败: '+r.msg, 'err');
 }
 async function cancelOrders() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
-  if (!confirm('撤销 ' + sym + ' 所有挂单？')) return;
-  const r = await fetch('/api/cancel', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: sym })
-  }).then(r => r.json());
-  toast(r.msg, r.ok ? 'ok' : 'err');
+  if (!confirm('撤销 '+sym+' 所有挂单？')) return;
+  const r = await fetch('/api/cancel', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol:sym})}).then(r=>r.json());
+  toast(r.msg, r.ok?'ok':'err');
 }
 function getScanSettings() {
   return {
@@ -735,259 +669,199 @@ function getScanSettings() {
     leverage:   parseInt(document.getElementById('s-lev').value),
     sl_pct:     parseFloat(document.getElementById('s-sl').value),
     tp_pct:     parseFloat(document.getElementById('s-tp').value),
-    auto_trade: document.getElementById('s-mode').value === 'auto',
+    auto_trade: document.getElementById('s-mode').value==='auto',
   };
 }
 function setScanActive(active) {
   document.getElementById('btn-scan-start').disabled = active;
   document.getElementById('btn-scan-stop').disabled  = !active;
-  const sweep = document.getElementById('scan-sweep');
-  const dot   = document.getElementById('scan-dot');
-  if (active) { sweep.classList.add('active'); dot.className = 'hdr-dot'; }
-  else        { sweep.classList.remove('active'); dot.className = 'hdr-dot off'; }
+  document.getElementById('scan-sweep').classList.toggle('active', active);
+  const dot = document.getElementById('scan-dot');
+  dot.style.background = active ? 'var(--blue)' : 'var(--muted)';
 }
 async function startScan() {
-  const r = await fetch('/api/scan/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(getScanSettings())
-  }).then(r => r.json());
-  if (r.ok) { scanRunning = true; setScanActive(true); toast('扫描已启动', 'ok'); }
+  const r = await fetch('/api/scan/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(getScanSettings())}).then(r=>r.json());
+  if (r.ok) { scanRunning=true; setScanActive(true); toast('扫描已启动', 'ok'); }
 }
 async function stopScan() {
-  await fetch('/api/scan/stop', { method: 'POST' });
-  scanRunning = false; setScanActive(false);
+  await fetch('/api/scan/stop', {method:'POST'});
+  scanRunning=false; setScanActive(false);
   document.getElementById('scan-status').textContent = '未启动';
 }
 async function loadScanStatus() {
-  const r = await fetch('/api/scan/status').then(r => r.json()).catch(() => ({}));
+  const r = await fetch('/api/scan/status').then(r=>r.json()).catch(()=>({}));
   if (!r) return;
   scanRunning = r.running;
   setScanActive(r.running);
-  const prog = r.progress || {};
+  const prog = r.progress||{};
   const wrap = document.getElementById('scan-progress-wrap');
-  if (prog.total > 0) {
-    const pct = Math.round(prog.current / prog.total * 100);
-    wrap.style.display = 'block';
-    document.getElementById('scan-progress-text').textContent = prog.current + '/' + prog.total + ' ' + prog.symbol;
-    document.getElementById('scan-progress-pct').textContent  = pct + '%';
-    document.getElementById('scan-progress-bar').style.width  = pct + '%';
+  if (prog.total>0) {
+    const pct = Math.round(prog.current/prog.total*100);
+    wrap.style.display='block';
+    document.getElementById('scan-progress-text').textContent = prog.current+'/'+prog.total+' '+prog.symbol;
+    document.getElementById('scan-progress-pct').textContent  = pct+'%';
+    document.getElementById('scan-progress-bar').style.width  = pct+'%';
     document.getElementById('scan-status').textContent = '实时扫描中...';
   } else {
-    wrap.style.display = 'none';
+    wrap.style.display='none';
     if (r.running) document.getElementById('scan-status').textContent = '实时扫描中...';
   }
   if (r.ts) {
     document.getElementById('scan-ts').textContent = r.ts;
-    renderSignals(r.results || []);
-    signalMap = {};
-    (r.results || []).forEach(s => { signalMap[s.symbol] = s.score; });
+    renderSignals(r.results||[]);
+    signalMap={};
+    (r.results||[]).forEach(s=>{signalMap[s.symbol]=s.score;});
     if (tickerData.length) renderChart();
   }
 }
 function renderSignals(results) {
-  const empty = document.getElementById('scan-empty');
-  const grid  = document.getElementById('scan-signals');
-  if (!results.length) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
-  empty.style.display = 'none';
-  grid.innerHTML = results.map(r => {
-    const isLong = r.direction === 'LONG';
-    const d = r.details;
-    const tc = c => c === 'green' ? 'up' : c === 'red' ? 'dn' : '';
-    const tags = [
-      '<span class="sig-tag ' + tc(d.vol.cls) + '">量价 ' + (d.vol.text||'') + '</span>',
-      '<span class="sig-tag ' + tc(d.rsi.cls) + '">RSI ' + (d.rsi.text||'') + '</span>',
-      '<span class="sig-tag ' + tc(d.mom.cls) + '">动量 ' + (d.mom.text||'') + '</span>',
-      '<span class="sig-tag ' + tc(d.bb.cls)  + '">BB '  + (d.bb.text ||'') + '</span>',
+  const empty=document.getElementById('scan-empty');
+  const grid =document.getElementById('scan-signals');
+  if (!results.length) { empty.style.display='block'; grid.innerHTML=''; return; }
+  empty.style.display='none';
+  grid.innerHTML = results.map(r=>{
+    const isLong=r.direction==='LONG';
+    const d=r.details;
+    const tc=c=>c==='green'?'up':c==='red'?'dn':'';
+    const tags=[
+      '<span class="sig-tag '+tc(d.vol.cls)+'">量价 '+(d.vol.text||'')+'</span>',
+      '<span class="sig-tag '+tc(d.rsi.cls)+'">RSI '+(d.rsi.text||'')+'</span>',
+      '<span class="sig-tag '+tc(d.mom.cls)+'">动量 '+(d.mom.text||'')+'</span>',
+      '<span class="sig-tag '+tc(d.bb.cls )+'">BB ' +(d.bb.text ||'')+'</span>',
     ].join('');
-    const safeR = JSON.stringify(r).replace(/"/g, '&quot;');
-    return '<div class="signal-card ' + (isLong ? 'long' : 'short') + '">' +
-      '<div class="sig-sym">' + r.symbol.replace('USDT','') + '<span style="color:var(--muted);font-size:9px">/U</span></div>' +
-      '<div class="sig-dir ' + (isLong ? 'long' : 'short') + '">' + (isLong ? '▲ 多' : '▼ 空') + '</div>' +
-      '<div class="sig-stars">' + '★'.repeat(r.score) + '<span style="opacity:.2">' + '★'.repeat(4-r.score) + '</span></div>' +
-      '<div class="sig-tags">' + tags + '</div>' +
-      '<div class="sig-price">' + r.price.toFixed(4) + '</div>' +
-      '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal(' + safeR + ')">交易</button></div>' +
+    const safeR=JSON.stringify(r).replace(/"/g,'&quot;');
+    return '<div class="signal-card '+(isLong?'long':'short')+'">' +
+      '<div class="sig-sym">'+r.symbol.replace('USDT','')+'<span style="color:var(--muted);font-size:9px">/U</span></div>' +
+      '<div class="sig-dir '+(isLong?'long':'short')+'">'+(isLong?'▲ 做多':'▼ 做空')+'</div>' +
+      '<div class="sig-stars">'+'★'.repeat(r.score)+'<span style="color:#dde1ea">'+'★'.repeat(4-r.score)+'</span></div>' +
+      '<div class="sig-tags">'+tags+'</div>' +
+      '<div class="sig-price">'+r.price.toFixed(4)+'</div>' +
+      '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal('+safeR+')">交易</button></div>' +
       '</div>';
   }).join('');
 }
 async function tradeSignal(signal) {
-  const s    = getScanSettings();
-  const side = signal.direction === 'LONG' ? 'BUY' : 'SELL';
-  const cn   = side === 'BUY' ? '做多' : '做空';
-  if (!confirm('确认交易？\n交易对: ' + signal.symbol + '\n方向: ' + cn + '\n评分: ' + signal.score + '分\n金额: ' + s.trade_usdt + ' U  杠杆: ' + s.leverage + 'x\n止损: ' + s.sl_pct + '%  止盈: ' + s.tp_pct + '%')) return;
-  const pr  = await fetch('/api/price/' + signal.symbol).then(r => r.json()).catch(() => ({}));
-  const qty = Math.round(s.trade_usdt / (pr.price || signal.price) * 1000) / 1000;
-  const r   = await fetch('/api/order/sltp', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ symbol: signal.symbol, side, qty, leverage: s.leverage, sl_pct: s.sl_pct, tp_pct: s.tp_pct })
-  }).then(r => r.json());
-  if (r.ok) { toast('下单成功 ' + cn + ' ' + signal.symbol, 'ok'); autoRefresh(); }
-  else toast('下单失败: ' + r.msg, 'err');
+  const s=getScanSettings();
+  const side=signal.direction==='LONG'?'BUY':'SELL';
+  const cn=side==='BUY'?'做多':'做空';
+  if (!confirm('确认交易？\n交易对: '+signal.symbol+'\n方向: '+cn+'\n评分: '+signal.score+'分\n金额: '+s.trade_usdt+' U  杠杆: '+s.leverage+'x\n止损: '+s.sl_pct+'%  止盈: '+s.tp_pct+'%')) return;
+  const pr=await fetch('/api/price/'+signal.symbol).then(r=>r.json()).catch(()=>({}));
+  const qty=Math.round(s.trade_usdt/(pr.price||signal.price)*1000)/1000;
+  const r=await fetch('/api/order/sltp', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({symbol:signal.symbol,side,qty,leverage:s.leverage,sl_pct:s.sl_pct,tp_pct:s.tp_pct})
+  }).then(r=>r.json());
+  if (r.ok) { toast('下单成功 '+cn+' '+signal.symbol, 'ok'); autoRefresh(); }
+  else toast('下单失败: '+r.msg, 'err');
 }
-
-// ── 图表 ──
 function initChart() {
-  radarChart = echarts.init(document.getElementById('radar-chart'), null, { renderer: 'canvas' });
-  window.addEventListener('resize', () => radarChart.resize());
-  radarChart.on('click', params => {
-    if (params.data?.value) {
-      document.getElementById('f-sym').value = params.data.value[3];
-      toast('已选择: ' + params.data.value[3], 'ok');
-    }
+  radarChart = echarts.init(document.getElementById('radar-chart'), null, {renderer:'canvas'});
+  window.addEventListener('resize', ()=>radarChart.resize());
+  radarChart.on('click', params=>{
+    if (params.data?.value) { document.getElementById('f-sym').value=params.data.value[3]; toast('已选择: '+params.data.value[3], 'ok'); }
   });
 }
 async function loadTickers() {
-  const r = await fetch('/api/tickers').then(r => r.json()).catch(() => ({ tickers: [] }));
-  if (r.tickers?.length) {
-    tickerData = r.tickers; renderChart();
-    document.getElementById('radar-ts').textContent = new Date().toLocaleTimeString();
-  }
+  const r = await fetch('/api/tickers').then(r=>r.json()).catch(()=>({tickers:[]}));
+  if (r.tickers?.length) { tickerData=r.tickers; renderChart(); document.getElementById('radar-ts').textContent=new Date().toLocaleTimeString(); }
 }
 function renderChart() {
-  if (!radarChart || !tickerData.length) return;
-  const maxVol = Math.max(...tickerData.map(t => t.vol));
-  const data = tickerData.map(t => {
-    const score = signalMap[t.symbol] || 0;
-    const size  = Math.max(6, Math.min(40, t.vol / maxVol * 40));
-    let color, shadow = 'transparent';
-    if      (score >= 4) { color = '#ff3a3a'; shadow = 'rgba(255,58,58,.8)'; }
-    else if (score >= 3) { color = '#ffb830'; shadow = 'rgba(255,184,48,.8)'; }
-    else if (score >= 2) { color = '#ffd060'; shadow = 'rgba(255,208,96,.7)'; }
-    else color = t.chg > 0
-      ? 'rgba(82,232,122,' + (0.35 + Math.min(Math.abs(t.chg)/18, .6)) + ')'
-      : 'rgba(255,58,58,'  + (0.25 + Math.min(Math.abs(t.chg)/18, .6)) + ')';
+  if (!radarChart||!tickerData.length) return;
+  const maxVol = Math.max(...tickerData.map(t=>t.vol));
+  const data = tickerData.map(t=>{
+    const score=signalMap[t.symbol]||0;
+    const size=Math.max(6,Math.min(38,t.vol/maxVol*38));
+    let color;
+    if      (score>=4) color='#dc2626';
+    else if (score>=3) color='#d97706';
+    else if (score>=2) color='#2563eb';
+    else color=t.chg>0
+      ?'rgba(22,163,74,'+(0.4+Math.min(Math.abs(t.chg)/18,.55))+')'
+      :'rgba(220,38,38,'+(0.3+Math.min(Math.abs(t.chg)/18,.55))+')';
     return {
-      value: [t.chg, t.vol, size, t.symbol, score],
-      itemStyle: {
-        color,
-        borderColor: score >= 2 ? 'rgba(255,255,255,.5)' : 'transparent',
-        borderWidth: score >= 2 ? 1 : 0,
-        shadowBlur:  score >= 2 ? 14 : 0,
-        shadowColor: shadow,
-      },
-      symbol:     score >= 2 ? 'diamond' : 'circle',
-      symbolSize: score >= 2 ? size * 1.4 : size,
+      value:[t.chg,t.vol,size,t.symbol,score],
+      itemStyle:{color, borderColor:score>=2?'rgba(255,255,255,.7)':'transparent', borderWidth:score>=2?1:0,
+        shadowBlur:score>=2?10:0, shadowColor:score>=3?'rgba(220,38,38,.4)':'rgba(37,99,235,.3)'},
+      symbol:score>=2?'diamond':'circle',
+      symbolSize:score>=2?size*1.3:size,
     };
   });
-  const labels = tickerData.slice(0, 28).map(t => ({
-    coord: [t.chg, t.vol],
-    value: (signalMap[t.symbol] >= 2 ? '◆ ' : '') + t.symbol.replace('USDT',''),
-    label: {
-      show: true, position: 'right', fontSize: 9,
-      color:      signalMap[t.symbol] >= 2 ? '#ffb830' : 'rgba(122,96,64,.8)',
-      fontWeight: signalMap[t.symbol] >= 2 ? 'bold' : 'normal',
-      fontFamily: 'Consolas,monospace',
-    }
+  const labels=tickerData.slice(0,28).map(t=>({
+    coord:[t.chg,t.vol],
+    value:(signalMap[t.symbol]>=2?'◆ ':'')+t.symbol.replace('USDT',''),
+    label:{show:true,position:'right',fontSize:9,
+      color:signalMap[t.symbol]>=2?'#2563eb':'#a0a8b8',
+      fontWeight:signalMap[t.symbol]>=2?'bold':'normal'}
   }));
   radarChart.setOption({
-    backgroundColor: '#0d0a06',
-    animation: true, animationDuration: 500, animationEasing: 'cubicOut',
-    grid: { left: 50, right: 18, top: 22, bottom: 34 },
-    xAxis: {
-      type: 'value', name: '24H涨跌%',
-      nameTextStyle: { color: 'rgba(122,96,64,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
-      axisLine:  { lineStyle: { color: 'rgba(255,160,30,.12)' } },
-      splitLine: { lineStyle: { color: 'rgba(255,160,30,.07)', type: 'dashed' } },
-      axisLabel: { color: 'rgba(122,96,64,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
-    },
-    yAxis: {
-      type: 'value', name: '成交额(亿)',
-      nameTextStyle: { color: 'rgba(122,96,64,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
-      axisLine:  { lineStyle: { color: 'rgba(255,160,30,.12)' } },
-      splitLine: { lineStyle: { color: 'rgba(255,160,30,.07)', type: 'dashed' } },
-      axisLabel: { color: 'rgba(122,96,64,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
-    },
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(19,16,10,.96)', borderColor: 'rgba(255,160,30,.3)',
-      textStyle: { color: '#f5e6c8', fontSize: 11, fontFamily: 'Consolas,monospace' },
-      formatter: p => {
-        const [chg, vol, , sym, score] = p.data.value;
-        const sc = score > 0 ? '<br><span style="color:#ffb830">信号: ' + '★'.repeat(score) + '</span>' : '';
-        return '<b style="color:#ffb830">' + sym + '</b><br>涨跌: ' + (chg>0?'+':'') + chg.toFixed(2) + '%<br>成交额: ' + vol.toFixed(1) + '亿' + sc;
-      }
-    },
-    series: [{ type: 'scatter', data, markPoint: { data: labels, symbol: 'none', animation: false } }],
-  }, true);
+    backgroundColor:'#ffffff',
+    animation:true, animationDuration:500,
+    grid:{left:50,right:18,top:22,bottom:34},
+    xAxis:{type:'value',name:'24H涨跌%',
+      nameTextStyle:{color:'#a0a8b8',fontSize:9},
+      axisLine:{lineStyle:{color:'#e8ebf0'}},
+      splitLine:{lineStyle:{color:'#f0f2f5',type:'dashed'}},
+      axisLabel:{color:'#a0a8b8',fontSize:9}},
+    yAxis:{type:'value',name:'成交额(亿)',
+      nameTextStyle:{color:'#a0a8b8',fontSize:9},
+      axisLine:{lineStyle:{color:'#e8ebf0'}},
+      splitLine:{lineStyle:{color:'#f0f2f5',type:'dashed'}},
+      axisLabel:{color:'#a0a8b8',fontSize:9}},
+    tooltip:{trigger:'item',backgroundColor:'#fff',borderColor:'#dde1ea',
+      textStyle:{color:'#1a1d2b',fontSize:11},
+      formatter:p=>{
+        const [chg,vol,,sym,score]=p.data.value;
+        const sc=score>0?'<br><b style="color:#2563eb">信号: '+'★'.repeat(score)+'</b>':'';
+        return '<b>'+sym+'</b><br>涨跌: '+(chg>0?'+':'')+chg.toFixed(2)+'%<br>成交额: '+vol.toFixed(1)+'亿'+sc;
+      }},
+    series:[{type:'scatter',data,markPoint:{data:labels,symbol:'none',animation:false}}],
+  },true);
 }
-
-// ── 日志 ──
 async function loadLog() {
-  const r = await fetch('/api/log').then(r => r.json()).catch(() => ({ log: [] }));
-  const box = document.getElementById('log-box');
+  const r=await fetch('/api/log').then(r=>r.json()).catch(()=>({log:[]}));
+  const box=document.getElementById('log-box');
   if (!r.log?.length) return;
-  box.innerHTML = r.log.map(l =>
-    '<div class="log-entry"><span class="ts">[' + l.ts + ']</span><span class="' + l.level + '">' + l.msg + '</span></div>'
-  ).join('');
-  box.scrollTop = box.scrollHeight;
+  box.innerHTML=r.log.map(l=>'<div class="log-entry"><span class="ts">['+l.ts+']</span><span class="'+l.level+'">'+l.msg+'</span></div>').join('');
+  box.scrollTop=box.scrollHeight;
 }
-function clearLog() { document.getElementById('log-box').innerHTML = ''; }
-
+function clearLog() { document.getElementById('log-box').innerHTML=''; }
 let toastTimer;
-function toast(msg, type) {
-  const el = document.getElementById('toast');
-  el.textContent   = msg;
-  el.style.display = 'block';
-  el.style.color   = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--gold)';
-  el.style.borderColor = type === 'ok' ? 'rgba(82,232,122,.3)' : type === 'err' ? 'rgba(255,58,58,.3)' : 'var(--border)';
+function toast(msg,type) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.display='block';
+  el.style.color=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--text)';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.style.display = 'none', 3500);
+  toastTimer=setTimeout(()=>el.style.display='none',3500);
 }
-
-// ── 拖拽分隔 ──
 function initResizers() {
-  colResize('resizer-left',  '.panel-left',  false);
-  colResize('resizer-right', '.panel-right', true);
-  colResize('resizer-inner', '.radar-card',  false);
-  rowResize('resizer-mid',   '.main-top');
+  colResize('resizer-left', '.panel-left',  false);
+  colResize('resizer-right','.panel-right', true);
+  colResize('resizer-inner','.radar-card',  false);
+  rowResize('resizer-mid',  '.main-top');
 }
-function colResize(id, sel, shrink) {
-  const resizer = document.getElementById(id);
-  const el      = document.querySelector(sel);
-  if (!resizer || !el) return;
-  resizer.addEventListener('mousedown', e => {
+function colResize(id,sel,shrink) {
+  const resizer=document.getElementById(id), el=document.querySelector(sel);
+  if (!resizer||!el) return;
+  resizer.addEventListener('mousedown',e=>{
     e.preventDefault();
-    const startX = e.clientX, startW = el.offsetWidth;
+    const startX=e.clientX, startW=el.offsetWidth;
     resizer.classList.add('dragging');
-    document.body.style.cssText = 'cursor:col-resize;user-select:none';
-    const move = e => {
-      const w = Math.max(180, startW + (shrink ? -(e.clientX-startX) : (e.clientX-startX)));
-      el.style.width = w + 'px'; el.style.minWidth = '0';
-      if (radarChart) radarChart.resize();
-    };
-    const up = () => {
-      resizer.classList.remove('dragging');
-      document.body.style.cssText = '';
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-      if (radarChart) radarChart.resize();
-    };
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
+    document.body.style.cssText='cursor:col-resize;user-select:none';
+    const move=e=>{const w=Math.max(180,startW+(shrink?-(e.clientX-startX):(e.clientX-startX)));el.style.width=w+'px';el.style.minWidth='0';if(radarChart)radarChart.resize();};
+    const up=()=>{resizer.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);if(radarChart)radarChart.resize();};
+    document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
   });
 }
-function rowResize(id, sel) {
-  const resizer = document.getElementById(id);
-  const el      = document.querySelector(sel);
-  if (!resizer || !el) return;
-  resizer.addEventListener('mousedown', e => {
+function rowResize(id,sel) {
+  const resizer=document.getElementById(id), el=document.querySelector(sel);
+  if (!resizer||!el) return;
+  resizer.addEventListener('mousedown',e=>{
     e.preventDefault();
-    const startY = e.clientY, startH = el.offsetHeight;
+    const startY=e.clientY, startH=el.offsetHeight;
     resizer.classList.add('dragging');
-    document.body.style.cssText = 'cursor:row-resize;user-select:none';
-    const move = e => {
-      const h = Math.max(200, startH + e.clientY - startY);
-      el.style.flex = 'none'; el.style.height = h + 'px';
-      if (radarChart) radarChart.resize();
-    };
-    const up = () => {
-      resizer.classList.remove('dragging');
-      document.body.style.cssText = '';
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-    };
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
+    document.body.style.cssText='cursor:row-resize;user-select:none';
+    const move=e=>{const h=Math.max(200,startH+e.clientY-startY);el.style.flex='none';el.style.height=h+'px';if(radarChart)radarChart.resize();};
+    const up=()=>{resizer.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);};
+    document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
   });
 }
 </script>
