@@ -233,11 +233,10 @@ def get_tickers():
 class SignalEngine:
     KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
 
-    # OKX bar 间隔映射
     _OKX_BAR = {"1h": "1H", "4h": "4H", "1d": "1D", "15m": "15m", "1m": "1m"}
 
     def _klines(self, symbol, interval="1h", limit=50):
-        # 优先 OKX（无地理限制）
+        """只走 OKX K线；OKX 没有的币直接返回空（跳过扫描）"""
         try:
             inst_id = _symbol_to_okx(symbol)
             bar     = self._OKX_BAR.get(interval, "1H")
@@ -245,31 +244,14 @@ class SignalEngine:
             req = urllib.request.Request(url)
             req.add_header("User-Agent", "python-requests/2.28")
             req.add_header("Accept", "application/json")
-            with urllib.request.urlopen(req, timeout=6) as r:
+            with urllib.request.urlopen(req, timeout=8) as r:
                 resp = json.loads(r.read())
             rows = resp.get("data", [])
             if rows:
                 return list(reversed(rows))   # OKX 返回最新在前，翻转为旧→新
         except Exception:
             pass
-
-        # 回退：已连接的币安客户端
-        if state["connected"]:
-            try:
-                return self.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
-            except Exception:
-                pass
-
-        # 回退：直接 HTTP
-        try:
-            url = f"{self.KLINE_URL}?symbol={symbol}&interval={interval}&limit={limit}"
-            req = urllib.request.Request(url)
-            req.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(req, timeout=5) as r:
-                return json.loads(r.read())
-        except Exception as e:
-            add_log(f"K线获取失败 {symbol}: {e}", "warn")
-            return []
+        return []
 
     @staticmethod
     def _rsi(closes, period=14):
@@ -366,7 +348,7 @@ class SignalEngine:
         state["scan_progress"] = {"current": 0, "total": total, "symbol": ""}
         add_log(f"开始并发扫描 {total} 个交易对...", "info")
 
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=8) as executor:
             futures = {executor.submit(_analyze_one, (i, t)): i for i, t in enumerate(top)}
             for future in as_completed(futures):
                 i, symbol, r = future.result()
