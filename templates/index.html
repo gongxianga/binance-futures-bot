@@ -783,10 +783,10 @@ async function loadScanStatus() {
     document.getElementById('scan-progress-text').textContent = prog.current + '/' + prog.total + ' ' + prog.symbol;
     document.getElementById('scan-progress-pct').textContent  = pct + '%';
     document.getElementById('scan-progress-bar').style.width  = pct + '%';
-    document.getElementById('scan-status').textContent = '扫描中...';
+    document.getElementById('scan-status').textContent = '实时扫描中...';
   } else {
     wrap.style.display = 'none';
-    if (r.running) document.getElementById('scan-status').textContent = '下次: ' + r.countdown;
+    if (r.running) document.getElementById('scan-status').textContent = '实时扫描中...';
   }
   if (r.ts) {
     document.getElementById('scan-ts').textContent = r.ts;

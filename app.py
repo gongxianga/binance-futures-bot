@@ -295,7 +295,7 @@ class SignalEngine:
         state["scan_progress"] = {"current": 0, "total": total, "symbol": ""}
         add_log(f"开始并发扫描 {total} 个交易对...", "info")
 
-        with ThreadPoolExecutor(max_workers=8) as executor:
+        with ThreadPoolExecutor(max_workers=20) as executor:
             futures = {executor.submit(_analyze_one, (i, t)): i for i, t in enumerate(top)}
             for future in as_completed(futures):
                 i, symbol, r = future.result()
@@ -636,40 +636,46 @@ def api_scan_start():
     settings = request.json or {}
     state["scan_running"] = True
     state["next_scan_at"] = time.time()
-    add_log("策略扫描已启动，间隔 30 分钟", "ok")
+    add_log("策略扫描已启动（实时模式，前300个交易对）", "ok")
 
     def _loop():
+        cycle = 0
         while state["scan_running"]:
-            if time.time() >= state["next_scan_at"]:
-                add_log("开始扫描市场信号...", "info")
-                tickers = get_tickers()
-                if tickers:
-                    results = signal_engine.scan(tickers, top_n=30)
-                    min_score = int(settings.get("min_score", 2))
-                    qualified = [r for r in results if r["score"] >= min_score]
-                    state["scan_results"] = qualified
-                    state["scan_ts"] = datetime.now().strftime("%H:%M:%S")
-                    add_log(f"扫描完成: 找到 {len(qualified)} 个 ≥{min_score}分 信号", "ok")
+            cycle += 1
+            add_log(f"第 {cycle} 轮扫描开始，获取行情数据...", "info")
+            tickers = get_tickers()
+            if tickers and state["scan_running"]:
+                results = signal_engine.scan(tickers, top_n=300)
+                min_score = int(settings.get("min_score", 2))
+                qualified = [r for r in results if r["score"] >= min_score]
+                state["scan_results"] = qualified
+                state["scan_ts"] = datetime.now().strftime("%H:%M:%S")
+                add_log(f"第{cycle}轮完成: 扫描{min(300,len(tickers))}个，找到 {len(qualified)} 个 ≥{min_score}分 信号", "ok")
 
-                    # 全自动交易
-                    if settings.get("auto_trade") and qualified and state["connected"] and engine:
-                        for r in qualified[:3]:
-                            side = "BUY" if r["direction"] == "LONG" else "SELL"
-                            usdt = float(settings.get("trade_usdt", 100))
-                            lev  = int(settings.get("leverage", 10))
-                            sl   = float(settings.get("sl_pct", 2.0))
-                            tp   = float(settings.get("tp_pct", 4.0))
-                            qty  = round(usdt / r["price"], 3)
-                            ok, res, sl_px, tp_px = engine.place_with_sltp(
-                                r["symbol"], side, qty, lev, sl, tp)
-                            cn = "做多" if side == "BUY" else "做空"
-                            if ok:
-                                add_log(f"[自动] {cn} {r['symbol']} 评分:{r['score']} 止损:{sl_px:.4f} 止盈:{tp_px:.4f}", "ok")
-                            else:
-                                add_log(f"[自动] 下单失败 {r['symbol']}: {res}", "err")
+                # 全自动交易
+                if settings.get("auto_trade") and qualified and state["connected"] and engine:
+                    for r in qualified[:3]:
+                        side = "BUY" if r["direction"] == "LONG" else "SELL"
+                        usdt = float(settings.get("trade_usdt", 100))
+                        lev  = int(settings.get("leverage", 10))
+                        sl   = float(settings.get("sl_pct", 2.0))
+                        tp   = float(settings.get("tp_pct", 4.0))
+                        qty  = round(usdt / r["price"], 3)
+                        ok, res, sl_px, tp_px = engine.place_with_sltp(
+                            r["symbol"], side, qty, lev, sl, tp)
+                        cn = "做多" if side == "BUY" else "做空"
+                        if ok:
+                            add_log(f"[自动] {cn} {r['symbol']} 评分:{r['score']} 止损:{sl_px:.4f} 止盈:{tp_px:.4f}", "ok")
+                        else:
+                            add_log(f"[自动] 下单失败 {r['symbol']}: {res}", "err")
+            elif not tickers:
+                add_log("获取行情失败，5秒后重试...", "warn")
+                time.sleep(5)
+                continue
 
-                state["next_scan_at"] = time.time() + 30 * 60
-            time.sleep(1)
+            # 每轮扫描完立即开始下一轮，短暂休息3秒避免触发限频
+            state["next_scan_at"] = time.time() + 3
+            time.sleep(3)
 
     threading.Thread(target=_loop, daemon=True).start()
     return jsonify({"ok": True})
