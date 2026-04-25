@@ -3,249 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BINANCE FUTURES BOT — LOGIN</title>
+<title>登录 — 币安合约交易系统</title>
 <style>
 :root {
-  --bg:     #050a12;
-  --bg2:    #080f1c;
-  --bg3:    #0b1526;
-  --border: rgba(0,240,255,.2);
-  --text:   #cce8ff;
-  --muted:  #4a7a9b;
-  --cyan:   #00f0ff;
-  --green:  #00ff88;
-  --red:    #ff2d6b;
+  --bg:     #0d0a06;
+  --bg2:    #13100a;
+  --bg3:    #1a1510;
+  --border: rgba(255,160,30,.25);
+  --text:   #f5e6c8;
+  --muted:  #7a6040;
+  --gold:   #ffb830;
+  --orange: #ff7a20;
+  --green:  #52e87a;
+  --red:    #ff3a3a;
   --font-mono: 'Consolas','SF Mono','Courier New',monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--font-mono);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center; overflow: hidden;
 }
-
-/* Grid background */
 body::before {
-  content: '';
-  position: fixed; inset: 0;
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    linear-gradient(rgba(0,240,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,240,255,.04) 1px, transparent 1px);
+    linear-gradient(rgba(255,160,30,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,160,30,.03) 1px, transparent 1px);
   background-size: 40px 40px;
-  animation: grid-drift 20s linear infinite;
-  pointer-events: none;
-  z-index: 0;
+  animation: gdrift 25s linear infinite;
 }
-@keyframes grid-drift { 0% { background-position: 0 0; } 100% { background-position: 40px 40px; } }
-
-/* Scanlines */
+@keyframes gdrift { 0%{background-position:0 0} 100%{background-position:40px 40px} }
 body::after {
-  content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,240,255,.012) 2px, rgba(0,240,255,.012) 4px);
-  pointer-events: none; z-index: 0;
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,140,20,.007) 3px, rgba(255,140,20,.007) 4px);
 }
 
-.login-wrap {
-  position: relative; z-index: 1;
-  width: 100%; max-width: 400px;
-  padding: 16px;
-}
+.wrap { position: relative; z-index: 1; width: 100%; max-width: 400px; padding: 16px; }
 
-/* Corner brackets */
-.bracket-box {
+.box {
   position: relative;
-  background: rgba(8,15,28,.95);
+  background: rgba(19,16,10,.97);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 40px 36px;
-  box-shadow: 0 0 60px rgba(0,240,255,.1), 0 20px 80px rgba(0,0,0,.8), inset 0 0 60px rgba(0,240,255,.02);
+  box-shadow: 0 0 60px rgba(255,140,20,.1), 0 20px 80px rgba(0,0,0,.9), inset 0 0 60px rgba(255,160,30,.015);
 }
-.bracket-box::before, .bracket-box::after {
-  content: '';
-  position: absolute; width: 20px; height: 20px;
-  border-color: var(--cyan); border-style: solid;
+/* 四角装饰 */
+.box::before, .box::after, .c3, .c4 {
+  content: ''; position: absolute; width: 18px; height: 18px;
+  border-color: var(--gold); border-style: solid;
 }
-.bracket-box::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-.bracket-box::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
-.bracket-tl, .bracket-br {
-  position: absolute; width: 20px; height: 20px;
-  border-color: var(--cyan); border-style: solid;
-}
-.bracket-tl { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-.bracket-br { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.box::before { top:-1px;  left:-1px;  border-width: 2px 0 0 2px; }
+.box::after  { top:-1px;  right:-1px; border-width: 2px 2px 0 0; }
+.c3 { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
+.c4 { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
 
-.top-line {
-  position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-  animation: scan-line 3s ease-in-out infinite;
+/* 顶部光线 */
+.top-glow {
+  position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: tglow 3s ease-in-out infinite;
 }
-@keyframes scan-line {
-  0%,100% { opacity: .4; }
-  50%      { opacity: 1; box-shadow: 0 0 8px var(--cyan); }
-}
+@keyframes tglow { 0%,100%{opacity:.4} 50%{opacity:1;box-shadow:0 0 8px var(--gold)} }
 
-.logo {
-  text-align: center;
-  margin-bottom: 36px;
-}
+.logo { text-align: center; margin-bottom: 34px; }
 .logo-icon {
-  width: 56px; height: 56px; margin: 0 auto 16px;
-  background: rgba(0,240,255,.06);
-  border: 1px solid rgba(0,240,255,.4);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
-  box-shadow: 0 0 20px rgba(0,240,255,.3), inset 0 0 20px rgba(0,240,255,.05);
-  animation: logo-glow 3s ease-in-out infinite;
+  width: 54px; height: 54px; margin: 0 auto 14px;
+  background: rgba(255,184,48,.1);
+  border: 1px solid rgba(255,184,48,.5);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  box-shadow: 0 0 20px rgba(255,184,48,.3), inset 0 0 20px rgba(255,184,48,.05);
+  animation: lglow 3s ease-in-out infinite;
 }
-@keyframes logo-glow {
-  0%,100% { box-shadow: 0 0 20px rgba(0,240,255,.3), inset 0 0 20px rgba(0,240,255,.05); }
-  50%      { box-shadow: 0 0 40px rgba(0,240,255,.6), inset 0 0 30px rgba(0,240,255,.1); }
+@keyframes lglow {
+  0%,100%{box-shadow:0 0 20px rgba(255,184,48,.3),inset 0 0 20px rgba(255,184,48,.05)}
+  50%    {box-shadow:0 0 40px rgba(255,184,48,.6),inset 0 0 30px rgba(255,184,48,.1)}
 }
 .logo h1 {
-  font-size: 16px; font-weight: 700;
-  color: var(--cyan); letter-spacing: 4px;
-  text-shadow: 0 0 12px rgba(0,240,255,.6);
-  margin-bottom: 6px;
+  font-size: 15px; font-weight: 700; color: var(--gold);
+  letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,184,48,.5); margin-bottom: 5px;
 }
 .logo p { font-size: 10px; color: var(--muted); letter-spacing: 2px; }
 
 .form-group { margin-bottom: 18px; }
-.form-group label {
-  display: block; font-size: 10px; color: var(--muted);
-  margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase;
-}
+.form-group label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 7px; letter-spacing: 1.5px; }
 .inp {
   width: 100%;
-  background: rgba(0,240,255,.04);
-  border: 1px solid rgba(0,240,255,.2);
-  border-radius: 4px;
-  padding: 12px 14px;
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
-  transition: all .2s;
-  font-family: var(--font-mono);
-  letter-spacing: 1px;
+  background: rgba(255,160,30,.04); border: 1px solid rgba(255,160,30,.2);
+  border-radius: 4px; padding: 12px 14px; color: var(--text);
+  font-size: 13px; outline: none; transition: all .2s; font-family: var(--font-mono); letter-spacing: 1px;
 }
-.inp:focus {
-  border-color: var(--cyan);
-  background: rgba(0,240,255,.07);
-  box-shadow: 0 0 0 2px rgba(0,240,255,.15), 0 0 16px rgba(0,240,255,.2);
-}
+.inp:focus { border-color: var(--gold); background: rgba(255,184,48,.07); box-shadow: 0 0 0 2px rgba(255,184,48,.14), 0 0 16px rgba(255,184,48,.18); }
 .inp::placeholder { color: var(--muted); }
 
 .captcha-row { display: flex; gap: 10px; align-items: flex-end; }
 .captcha-row .inp { flex: 1; }
 .captcha-img {
-  width: 112px; height: 42px;
-  border: 1px solid rgba(0,240,255,.2); border-radius: 4px;
-  cursor: pointer; overflow: hidden;
-  background: rgba(0,240,255,.04);
-  transition: all .2s;
+  width: 110px; height: 42px; border: 1px solid rgba(255,160,30,.2);
+  border-radius: 4px; cursor: pointer; overflow: hidden;
+  background: rgba(255,160,30,.04); transition: all .2s;
 }
-.captcha-img:hover { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,240,255,.3); }
+.captcha-img:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,184,48,.3); }
 .captcha-img img { width: 100%; height: 100%; display: block; }
 
 .btn {
   width: 100%;
-  background: rgba(0,240,255,.08);
-  color: var(--cyan);
-  border: 1px solid rgba(0,240,255,.4);
-  border-radius: 4px;
-  padding: 14px;
-  font-size: 12px; font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  margin-top: 8px;
-  font-family: var(--font-mono);
-  letter-spacing: 3px; text-transform: uppercase;
-  box-shadow: 0 0 12px rgba(0,240,255,.2);
+  background: rgba(255,184,48,.1); color: var(--gold);
+  border: 1px solid rgba(255,184,48,.4); border-radius: 4px;
+  padding: 13px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .2s; margin-top: 8px;
+  font-family: var(--font-mono); letter-spacing: 3px;
+  box-shadow: 0 0 12px rgba(255,184,48,.15);
 }
-.btn:hover {
-  background: rgba(0,240,255,.14);
-  box-shadow: 0 0 24px rgba(0,240,255,.5), 0 0 8px rgba(0,240,255,.3);
-  transform: translateY(-1px);
-}
+.btn:hover { background: rgba(255,184,48,.18); box-shadow: 0 0 24px rgba(255,184,48,.45); transform: translateY(-1px); }
 .btn:active { transform: translateY(0); opacity: .9; }
 .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .alert {
-  padding: 10px 14px; border-radius: 4px;
-  font-size: 11px; margin-bottom: 18px; display: none;
-  letter-spacing: 1px;
-  font-family: var(--font-mono);
+  padding: 10px 14px; border-radius: 4px; font-size: 11px;
+  margin-bottom: 18px; display: none; letter-spacing: .5px;
 }
-.alert.error {
-  background: rgba(255,45,107,.08); border: 1px solid rgba(255,45,107,.3);
-  color: var(--red); box-shadow: 0 0 12px rgba(255,45,107,.15);
-}
-.alert.success {
-  background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.3);
-  color: var(--green); box-shadow: 0 0 12px rgba(0,255,136,.15);
-}
+.alert.error   { background: rgba(255,58,58,.08); border: 1px solid rgba(255,58,58,.3); color: var(--red); }
+.alert.success { background: rgba(82,232,122,.08); border: 1px solid rgba(82,232,122,.3); color: var(--green); }
 
-.status-bar {
+.footer {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin-top: 24px; font-size: 9px; color: var(--muted); letter-spacing: 2px;
+  margin-top: 22px; font-size: 9px; color: var(--muted); letter-spacing: 1.5px;
 }
-.status-dot {
-  width: 5px; height: 5px; background: var(--green); border-radius: 50%;
-  box-shadow: 0 0 6px var(--green);
-  animation: blink 2s ease-in-out infinite;
-}
+.dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: blink 2s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 </style>
 </head>
 <body>
-
-<div class="login-wrap">
-  <div class="bracket-box">
-    <div class="top-line"></div>
-    <div class="bracket-tl"></div>
-    <div class="bracket-br"></div>
+<div class="wrap">
+  <div class="box">
+    <div class="top-glow"></div>
+    <div class="c3"></div><div class="c4"></div>
 
     <div class="logo">
       <div class="logo-icon">&#9889;</div>
-      <h1>BINANCE FUTURES</h1>
-      <p>AUTHENTICATION REQUIRED &mdash; v4.0</p>
+      <h1>币安合约交易系统</h1>
+      <p>安全验证 &mdash; v4.0</p>
     </div>
 
     <div class="alert" id="alert"></div>
 
     <form id="login-form" onsubmit="login(event)">
       <div class="form-group">
-        <label>User ID</label>
-        <input type="text" class="inp" id="username" placeholder="ENTER USERNAME" required autocomplete="username">
+        <label>用户名</label>
+        <input type="text" class="inp" id="username" placeholder="请输入用户名" required autocomplete="username">
       </div>
-
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" class="inp" id="password" placeholder="ENTER PASSWORD" required autocomplete="current-password">
+        <label>密码</label>
+        <input type="password" class="inp" id="password" placeholder="请输入密码" required autocomplete="current-password">
       </div>
-
       <div class="form-group">
-        <label>Captcha Verify</label>
+        <label>验证码</label>
         <div class="captcha-row">
-          <input type="text" class="inp" id="captcha" placeholder="ENTER CODE" required autocomplete="off" maxlength="4">
-          <div class="captcha-img" onclick="refreshCaptcha()" title="Click to refresh">
-            <img id="captcha-image" src="/api/auth/captcha" alt="captcha">
+          <input type="text" class="inp" id="captcha" placeholder="输入验证码" required autocomplete="off" maxlength="4">
+          <div class="captcha-img" onclick="refreshCaptcha()" title="点击刷新">
+            <img id="captcha-image" src="/api/auth/captcha" alt="验证码">
           </div>
         </div>
       </div>
-
-      <button type="submit" class="btn" id="btn-login">ACCESS SYSTEM</button>
+      <button type="submit" class="btn" id="btn-login">登 录</button>
     </form>
 
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      SECURE CONNECTION &mdash; ENCRYPTED CHANNEL
+    <div class="footer">
+      <div class="dot"></div>
+      安全加密连接
     </div>
   </div>
 </div>
@@ -256,25 +184,19 @@ function refreshCaptcha() {
   document.getElementById('captcha').value = '';
   document.getElementById('captcha').focus();
 }
-
 function showAlert(msg, type) {
   const el = document.getElementById('alert');
-  el.textContent = msg;
-  el.className = 'alert ' + (type || 'error');
-  el.style.display = 'block';
+  el.textContent = msg; el.className = 'alert ' + (type||'error'); el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 5000);
 }
-
 async function login(e) {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
   const captcha  = document.getElementById('captcha').value.trim();
-  if (!username || !password || !captcha) { showAlert('ALL FIELDS REQUIRED'); return; }
-
+  if (!username || !password || !captcha) { showAlert('请填写所有字段'); return; }
   const btn = document.getElementById('btn-login');
-  btn.disabled = true; btn.textContent = 'AUTHENTICATING...';
-
+  btn.disabled = true; btn.textContent = '验证中...';
   try {
     const res  = await fetch('/api/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -282,23 +204,18 @@ async function login(e) {
     });
     const data = await res.json();
     if (data.ok) {
-      showAlert('ACCESS GRANTED — REDIRECTING...', 'success');
+      showAlert('登录成功，正在跳转...', 'success');
       setTimeout(() => window.location.href = '/', 800);
     } else {
-      showAlert(data.msg || 'ACCESS DENIED');
-      refreshCaptcha();
-      btn.disabled = false; btn.textContent = 'ACCESS SYSTEM';
+      showAlert(data.msg || '登录失败，请重试');
+      refreshCaptcha(); btn.disabled = false; btn.textContent = '登 录';
     }
-  } catch (err) {
-    showAlert('NETWORK ERROR: ' + err.message);
-    refreshCaptcha();
-    btn.disabled = false; btn.textContent = 'ACCESS SYSTEM';
+  } catch(err) {
+    showAlert('网络错误: ' + err.message);
+    refreshCaptcha(); btn.disabled = false; btn.textContent = '登 录';
   }
 }
-
-document.getElementById('captcha').addEventListener('keypress', e => {
-  if (e.key === 'Enter') login(e);
-});
+document.getElementById('captcha').addEventListener('keypress', e => { if (e.key==='Enter') login(e); });
 window.addEventListener('load', () => document.getElementById('username').focus());
 </script>
 </body>
