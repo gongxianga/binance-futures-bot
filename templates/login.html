@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - 币安合约交易软件</title>
+<style>
+:root {
+  --bg: #f2f2f7; --bg2: #ffffff; --bg3: #e5e5ea;
+  --text: #1c1c1e; --muted: #8e8e93; --border: #c7c7cc;
+  --accent: #007aff; --green: #34c759; --red: #ff3b30;
+  --shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000; --bg2:#1c1c1e; --bg3:#2c2c2e;
+  --text:#f2f2f7; --muted:#8e8e93; --border:#38383a;
+  --accent:#0a84ff; --green:#30d158; --red:#ff453a;
+  --shadow:0 2px 12px rgba(0,0,0,.5);
+}}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 420px;
+  max-width: 90%;
+  box-shadow: var(--shadow);
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo h1 {
+  font-size: 24px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.logo p {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.inp {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: all .2s;
+}
+
+.inp:focus {
+  border-color: var(--accent);
+  background: var(--bg2);
+}
+
+.captcha-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.captcha-row .inp {
+  flex: 1;
+}
+
+.captcha-img {
+  width: 120px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .2s;
+}
+
+.captcha-img:hover {
+  opacity: .8;
+}
+
+.captcha-img img {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+}
+
+.btn {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+  margin-top: 8px;
+}
+
+.btn:hover {
+  opacity: .9;
+}
+
+.btn:active {
+  opacity: .8;
+}
+
+.btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.alert {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  display: none;
+}
+
+.alert.error {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+.alert.success {
+  background: rgba(52, 199, 89, 0.1);
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.security-info {
+  background: var(--bg3);
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 24px;
+}
+
+.security-info h3 {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.security-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.security-info li {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.security-info li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+}
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <div class="logo">
+    <h1>⚡ BINANCE FUTURES BOT</h1>
+    <p>v4.0 安全增强版</p>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <form id="login-form" onsubmit="login(event)">
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" class="inp" id="username" placeholder="请输入用户名" required autocomplete="username">
+    </div>
+
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" class="inp" id="password" placeholder="请输入密码" required autocomplete="current-password">
+    </div>
+
+    <div class="form-group">
+      <label>验证码</label>
+      <div class="captcha-row">
+        <input type="text" class="inp" id="captcha" placeholder="请输入验证码" required autocomplete="off" maxlength="4">
+        <div class="captcha-img" onclick="refreshCaptcha()">
+          <img id="captcha-image" src="/api/auth/captcha" alt="验证码">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn" id="btn-login">登 录</button>
+  </form>
+
+  <div class="security-info">
+    <h3>🔒 安全特性</h3>
+    <ul>
+      <li>用户名/密码登录认证</li>
+      <li>验证码防暴力破解</li>
+      <li>登录失败次数限制 (5次)</li>
+      <li>API密钥加密存储</li>
+      <li>IP白名单访问控制</li>
+      <li>会话安全管理</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    默认账户: <strong>admin</strong> / <strong>admin123</strong><br>
+    首次登录后请立即修改密码
+  </div>
+</div>
+
+<script>
+function refreshCaptcha() {
+  document.getElementById('captcha-image').src = '/api/auth/captcha?' + Date.now();
+  document.getElementById('captcha').value = '';
+  document.getElementById('captcha').focus();
+}
+
+function showAlert(msg, type = 'error') {
+  const alert = document.getElementById('alert');
+  alert.textContent = msg;
+  alert.className = 'alert ' + type;
+  alert.style.display = 'block';
+  setTimeout(() => {
+    alert.style.display = 'none';
+  }, 5000);
+}
+
+async function login(e) {
+  e.preventDefault();
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const captcha = document.getElementById('captcha').value.trim();
+
+  if (!username || !password || !captcha) {
+    showAlert('请填写所有字段');
+    return;
+  }
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = '登录中...';
+
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, captcha })
+    });
+
+    const data = await response.json();
+
+    if (data.ok) {
+      showAlert('登录成功，正在跳转...', 'success');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 800);
+    } else {
+      showAlert(data.msg || '登录失败');
+      refreshCaptcha();
+      btn.disabled = false;
+      btn.textContent = '登 录';
+    }
+  } catch (error) {
+    showAlert('网络错误: ' + error.message);
+    refreshCaptcha();
+    btn.disabled = false;
+    btn.textContent = '登 录';
+  }
+}
+
+// 回车提交
+document.getElementById('captcha').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    login(e);
+  }
+});
+
+// 页面加载完成，聚焦用户名输入框
+window.addEventListener('load', () => {
+  document.getElementById('username').focus();
+});
+</script>
+
+</body>
+</html>

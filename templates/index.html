@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>币安合约交易软件 v4.0</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+:root {
+  --bg:     #f2f2f7; --bg2:  #ffffff; --bg3:    #e5e5ea;
+  --text:   #1c1c1e; --muted:#8e8e93; --border: #c7c7cc;
+  --accent: #007aff; --green:#34c759; --red:    #ff3b30;
+  --yellow: #ff9500; --shadow: 0 1px 4px rgba(0,0,0,.10);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e; --bg2:#2c2c2e; --bg3:#3a3a3c;
+  --text:#f2f2f7; --muted:#8e8e93; --border:#48484a;
+  --accent:#0a84ff; --green:#30d158; --red:#ff453a;
+  --yellow:#ffd60a; --shadow:0 1px 4px rgba(0,0,0,.35);
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Header ── */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:16px;height:54px;flex-shrink:0}
+.hdr-title{font-size:15px;font-weight:700;color:var(--accent);white-space:nowrap}
+.hdr-conn{display:flex;align-items:center;gap:8px;margin-left:auto}
+.inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-size:13px;outline:none;width:160px}
+.inp:focus{border-color:var(--accent)}
+.chk{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.status{font-size:12px;white-space:nowrap}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+
+/* ── Body ── */
+.body{display:grid;grid-template-columns:500px 1fr;grid-template-rows:1fr auto auto;gap:8px;padding:8px;flex:1;overflow:hidden;min-height:0}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.card-hdr{padding:10px 14px 6px;font-size:12px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card-hdr span{margin-left:auto}
+
+/* ── Radar ── */
+.radar-wrap{grid-row:1/2;grid-column:1/2;display:flex;flex-direction:column}
+#radar-chart{flex:1;min-height:0}
+
+/* ── Right panel ── */
+.right{grid-row:1/2;grid-column:2/3;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 14px}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-body{flex:1;overflow-y:auto;padding:14px}
+.tab-panel{display:none} .tab-panel.active{display:block}
+
+/* ── Account ── */
+.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.acc-item label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.acc-item .val{font-size:16px;font-weight:700;color:var(--green)}
+.acc-item .val.neg{color:var(--red)}
+
+/* ── Form ── */
+.form-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:center;margin-bottom:12px}
+.form-grid label{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.form-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;width:100%}
+.form-inp:focus{border-color:var(--accent)}
+select.form-inp{cursor:pointer}
+.sym-row{display:flex;gap:8px;align-items:center}
+.cur-price{font-size:12px;color:var(--yellow);font-weight:600}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.88} .btn:active{opacity:.75}
+.btn:disabled{opacity:.45;cursor:default}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.btn-long{background:var(--green);color:#fff}
+.btn-short{background:var(--red);color:#fff}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:var(--bg3);color:var(--text)}
+.btn-warn{background:var(--bg3);color:var(--yellow)}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
+
+/* ── Scanner settings ── */
+.scan-settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.scan-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.mode-row{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.mode-row label{font-size:13px;color:var(--text);display:flex;align-items:center;gap:5px;cursor:pointer}
+.scan-ctrl{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.countdown{font-size:12px;color:var(--muted)}
+
+/* ── Tables ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg3);padding:7px 10px;text-align:center;font-weight:600;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:var(--bg3)}
+.green{color:var(--green)} .red{color:var(--red)} .yellow{color:var(--yellow)} .muted{color:var(--muted)} .accent{color:var(--accent)}
+
+/* ── Score stars ── */
+.s1{color:var(--yellow)} .s2{color:var(--yellow)} .s3{color:#ff8c00} .s4{color:var(--red)}
+
+/* ── Positions & Log ── */
+.positions{grid-row:2/3;grid-column:1/3}
+.log-panel{grid-row:3/4;grid-column:1/3;display:flex;flex-direction:column}
+.log-box{font-family:'Consolas',monospace;font-size:12px;overflow-y:auto;padding:8px 14px;flex:1;max-height:110px}
+.log-box .ok{color:var(--green)} .log-box .err{color:var(--red)} .log-box .warn{color:var(--yellow)} .log-box .info{color:var(--muted)}
+.log-entry{margin-bottom:2px}
+.ts{color:var(--border);margin-right:8px}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:13px;box-shadow:var(--shadow);display:none;z-index:999}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.sep{border:none;border-top:1px solid var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="hdr">
+  <div class="hdr-title">⚡ BINANCE FUTURES BOT v4.0 🔒</div>
+  <div class="hdr-conn">
+    <span style="font-size:12px;color:var(--muted);margin-right:8px">👤 <span id="current-user">加载中...</span></span>
+    <input class="inp" id="inp-key"    type="password" placeholder="API Key"    style="width:150px">
+    <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:150px">
+    <label class="chk"><input type="checkbox" id="chk-testnet" checked> 测试网</label>
+    <button class="btn btn-primary btn-sm" id="btn-connect" onclick="connect()">连 接</button>
+    <span class="status err" id="conn-status">● 未连接</span>
+    <button class="btn btn-ghost btn-sm" onclick="logout()" style="margin-left:8px">登出</button>
+  </div>
+</div>
+
+<!-- ── Body ── -->
+<div class="body">
+
+  <!-- Radar -->
+  <div class="card radar-wrap">
+    <div class="card-hdr">
+      市场雷达
+      <span style="color:var(--muted);font-size:11px" id="radar-ts"></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
+    </div>
+    <div id="radar-chart"></div>
+  </div>
+
+  <!-- Right tabs -->
+  <div class="card right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('trade')">交 易</div>
+      <div class="tab" onclick="switchTab('scanner')">策略扫描</div>
+    </div>
+
+    <!-- 交易 Tab -->
+    <div class="tab-panel active" id="tab-trade">
+      <div class="tab-body">
+        <!-- 账户 -->
+        <div class="acc-grid">
+          <div class="acc-item"><label>可用余额</label><div class="val" id="v-avail">-- USDT</div></div>
+          <div class="acc-item"><label>钱包余额</label><div class="val" id="v-wallet">-- USDT</div></div>
+          <div class="acc-item"><label>未实现盈亏</label><div class="val" id="v-pnl">-- USDT</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadAccount()">刷新账户</button>
+        <hr class="sep">
+
+        <!-- 下单 -->
+        <div class="form-grid">
+          <label>交易对</label>
+          <div class="sym-row">
+            <input class="form-inp" id="f-sym" value="BTCUSDT" style="width:110px">
+            <span class="cur-price" id="f-cprice">--</span>
+            <button class="btn btn-ghost btn-sm" onclick="getPrice()">获取价格</button>
+          </div>
+          <label>订单类型</label>
+          <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
+            <option>MARKET</option><option>LIMIT</option>
+          </select>
+          <label>杠杆倍数</label>
+          <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
+          <label>数量</label>
+          <input class="form-inp" id="f-qty" value="0.001">
+          <label>限价</label>
+          <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单需要">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-long" onclick="manualOrder('BUY')">做  多  (买入)</button>
+          <button class="btn btn-short" onclick="manualOrder('SELL')">做  空  (卖出)</button>
+        </div>
+        <button class="btn btn-warn btn-sm" onclick="cancelOrders()">撤销当前交易对所有挂单</button>
+      </div>
+    </div>
+
+    <!-- 策略扫描 Tab -->
+    <div class="tab-panel" id="tab-scanner">
+      <div class="tab-body">
+        <div class="scan-settings">
+          <div class="scan-field"><label>最低信号分 (1-4)</label><input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4"></div>
+          <div class="scan-field"><label>每笔金额 (USDT)</label><input class="form-inp" id="s-usdt" value="100"></div>
+          <div class="scan-field"><label>杠杆倍数</label><input class="form-inp" id="s-lev" value="10" type="number"></div>
+          <div class="scan-field"><label>止损 %</label><input class="form-inp" id="s-sl" value="2.0"></div>
+          <div class="scan-field"><label>止盈 %</label><input class="form-inp" id="s-tp" value="4.0"></div>
+        </div>
+        <div class="mode-row">
+          <span style="font-size:12px;color:var(--muted)">执行模式:</span>
+          <label><input type="radio" name="mode" value="manual" checked> 手动确认</label>
+          <label><input type="radio" name="mode" value="auto"> 全自动</label>
+        </div>
+        <div class="scan-ctrl">
+          <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">▶ 开始扫描</button>
+          <button class="btn btn-ghost btn-sm" id="btn-scan-stop" onclick="stopScan()" disabled>■ 停止</button>
+          <span class="countdown" id="scan-status">状态: 未启动</span>
+        </div>
+        <hr class="sep">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;font-weight:600;color:var(--muted)">扫描结果</span>
+          <span style="font-size:11px;color:var(--muted)" id="scan-ts"></span>
+        </div>
+        <div class="tbl-wrap">
+          <table id="scan-table">
+            <thead><tr>
+              <th>交易对</th><th>评分</th><th>方向</th>
+              <th>量价突破</th><th>RSI</th><th>动量</th><th>布林带</th>
+              <th>当前价</th><th>操作</th>
+            </tr></thead>
+            <tbody id="scan-tbody"><tr><td colspan="9" class="muted" style="padding:20px">点击「开始扫描」</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Positions -->
+  <div class="card positions">
+    <div class="card-hdr">
+      当前持仓
+      <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
+          <th>标记价</th><th>未实现盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
+        </tr></thead>
+        <tbody id="pos-tbody"><tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card log-panel">
+    <div class="card-hdr">
+      操作日志
+      <button class="btn btn-ghost btn-sm" onclick="clearLog()">清除</button>
+    </div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ────────────────────────────────────────
+let radarChart = null;
+let tickerData  = [];
+let signalMap   = {};
+let scanRunning = false;
+let autoRefreshTimer = null;
+
+// ── Init ─────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadCurrentUser();
+  initChart();
+  loadTickers();
+  loadStatus();
+  loadLog();
+  setInterval(autoRefresh, 5000);
+  setInterval(loadLog, 3000);
+  setInterval(loadScanStatus, 1000);
+  setInterval(loadTickers, 60000);
+  loadSavedConfig();
+});
+
+// ── Auth ─────────────────────────────────────────
+async function loadCurrentUser() {
+  const r = await fetch('/api/auth/status').then(r=>r.json()).catch(()=>({}));
+  if (r.authenticated) {
+    document.getElementById('current-user').textContent = r.username;
+  } else {
+    window.location.href = '/login';
+  }
+}
+
+async function logout() {
+  if (!confirm('确认退出登录？')) return;
+  await fetch('/api/auth/logout', {method:'POST'});
+  window.location.href = '/login';
+}
+
+async function loadStatus() {
+  const r = await fetch('/api/status').then(r=>r.json()).catch(()=>({}));
+  if (r.connected) {
+    document.getElementById('conn-status').className = 'status ok';
+    document.getElementById('conn-status').textContent = '● 已连接';
+    autoRefresh();
+  }
+}
+
+async function loadSavedConfig() {
+  const cfg = await fetch('/api/config').then(r=>r.json()).catch(()=>({}));
+  if (cfg.api_key) document.getElementById('inp-key').value = cfg.api_key;
+  if (cfg.testnet !== undefined) document.getElementById('chk-testnet').checked = cfg.testnet;
+}
+
+// ── Connect ──────────────────────────────────────
+async function connect() {
+  const key    = document.getElementById('inp-key').value.trim();
+  const secret = document.getElementById('inp-secret').value.trim();
+  const test   = document.getElementById('chk-testnet').checked;
+  if (!key || !secret) { toast('请填写 API Key 和 Secret', 'err'); return; }
+
+  document.getElementById('btn-connect').disabled = true;
+  const r = await fetch('/api/connect', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({api_key:key, api_secret:secret, testnet:test})
+  }).then(r=>r.json());
+
+  document.getElementById('btn-connect').disabled = false;
+  if (r.ok) {
+    document.getElementById('conn-status').className = 'status ok';
+    document.getElementById('conn-status').textContent = '● 已连接';
+    toast('连接成功', 'ok');
+    autoRefresh();
+  } else {
+    toast('连接失败: ' + r.msg, 'err');
+  }
+}
+
+// ── Auto Refresh ─────────────────────────────────
+async function autoRefresh() {
+  await loadAccount();
+  await loadPositions();
+}
+
+// ── Account ──────────────────────────────────────
+async function loadAccount() {
+  const r = await fetch('/api/account').then(r=>r.json()).catch(()=>({}));
+  if (!r.ok) return;
+  document.getElementById('v-avail').textContent  = r.available.toFixed(2) + ' USDT';
+  document.getElementById('v-wallet').textContent = r.wallet.toFixed(2) + ' USDT';
+  const pnlEl = document.getElementById('v-pnl');
+  pnlEl.textContent = (r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2) + ' USDT';
+  pnlEl.className = 'val ' + (r.pnl >= 0 ? '' : 'neg');
+}
+
+// ── Positions ────────────────────────────────────
+async function loadPositions() {
+  const r = await fetch('/api/positions').then(r=>r.json()).catch(()=>({positions:[]}));
+  const tbody = document.getElementById('pos-tbody');
+  if (!r.positions.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>';
+    return;
+  }
+  tbody.innerHTML = r.positions.map(p => `
+    <tr>
+      <td class="accent">${p.symbol}</td>
+      <td class="${p.side==='多'?'green':'red'}">${p.side==='多'?'多▲':'空▼'}</td>
+      <td>${p.amt.toFixed(4)}</td>
+      <td>${p.entry.toFixed(4)}</td>
+      <td>${p.mark.toFixed(4)}</td>
+      <td class="${p.pnl>=0?'green':'red'}">${p.pnl>=0?'+':''}${p.pnl.toFixed(2)}</td>
+      <td class="${p.roe>=0?'green':'red'}">${p.roe>=0?'+':''}${p.roe.toFixed(2)}%</td>
+      <td>${p.leverage}x</td>
+      <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
+    </tr>`).join('');
+}
+
+// ── Price ────────────────────────────────────────
+async function getPrice() {
+  const sym = document.getElementById('f-sym').value.trim().toUpperCase();
+  const r = await fetch('/api/price/' + sym).then(r=>r.json()).catch(()=>({}));
+  if (r.ok) document.getElementById('f-cprice').textContent = r.price.toFixed(4);
+  else toast('获取价格失败', 'err');
+}
+
+// ── Trade ────────────────────────────────────────
+function onOtypeChange() {
+  document.getElementById('f-lprice').disabled =
+    document.getElementById('f-otype').value !== 'LIMIT';
+}
+
+async function manualOrder(side) {
+  const sym   = document.getElementById('f-sym').value.trim().toUpperCase();
+  const otype = document.getElementById('f-otype').value;
+  const qty   = parseFloat(document.getElementById('f-qty').value);
+  const lev   = parseInt(document.getElementById('f-lev').value);
+  const lpx   = parseFloat(document.getElementById('f-lprice').value);
+  const cn    = side === 'BUY' ? '做多(买入)' : '做空(卖出)';
+  const extra = otype === 'LIMIT' ? `\n限价: ${lpx}` : '';
+  if (!confirm(`确认下单？\n交易对: ${sym}\n方向: ${cn}\n类型: ${otype}\n数量: ${qty}\n杠杆: ${lev}x${extra}`)) return;
+
+  const body = {symbol:sym, side, type:otype, qty, leverage:lev};
+  if (otype === 'LIMIT') body.price = lpx;
+  const r = await fetch('/api/order', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(r=>r.json());
+  if (r.ok) { toast('下单成功 ' + cn + ' ' + sym, 'ok'); autoRefresh(); }
+  else toast('下单失败: ' + r.msg, 'err');
+}
+
+async function closePos(symbol) {
+  if (!confirm(`确认平仓 ${symbol}？`)) return;
+  const r = await fetch('/api/close', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol})
+  }).then(r=>r.json());
+  if (r.ok) { toast('平仓成功: ' + symbol, 'ok'); autoRefresh(); }
+  else toast('平仓失败: ' + r.msg, 'err');
+}
+
+async function cancelOrders() {
+  const sym = document.getElementById('f-sym').value.trim().toUpperCase();
+  if (!confirm(`撤销 ${sym} 所有挂单？`)) return;
+  const r = await fetch('/api/cancel', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({symbol:sym})
+  }).then(r=>r.json());
+  toast(r.msg, r.ok ? 'ok' : 'err');
+}
+
+// ── Scanner ──────────────────────────────────────
+function getScanSettings() {
+  return {
+    min_score:   parseInt(document.getElementById('s-minscore').value),
+    trade_usdt:  parseFloat(document.getElementById('s-usdt').value),
+    leverage:    parseInt(document.getElementById('s-lev').value),
+    sl_pct:      parseFloat(document.getElementById('s-sl').value),
+    tp_pct:      parseFloat(document.getElementById('s-tp').value),
+    auto_trade:  document.querySelector('input[name="mode"]:checked').value === 'auto',
+  };
+}
+
+async function startScan() {
+  const settings = getScanSettings();
+  const r = await fetch('/api/scan/start', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings)
+  }).then(r=>r.json());
+  if (r.ok) {
+    scanRunning = true;
+    document.getElementById('btn-scan-start').disabled = true;
+    document.getElementById('btn-scan-stop').disabled  = false;
+    toast('扫描已启动', 'ok');
+  }
+}
+
+async function stopScan() {
+  await fetch('/api/scan/stop', {method:'POST'});
+  scanRunning = false;
+  document.getElementById('btn-scan-start').disabled = false;
+  document.getElementById('btn-scan-stop').disabled  = true;
+  document.getElementById('scan-status').textContent = '状态: 已停止';
+}
+
+async function loadScanStatus() {
+  const r = await fetch('/api/scan/status').then(r=>r.json()).catch(()=>({}));
+  if (!r) return;
+  scanRunning = r.running;
+  document.getElementById('btn-scan-start').disabled = r.running;
+  document.getElementById('btn-scan-stop').disabled  = !r.running;
+
+  if (r.running) {
+    document.getElementById('scan-status').textContent = `状态: 下次扫描 ${r.countdown}`;
+  }
+  if (r.ts) {
+    document.getElementById('scan-ts').textContent = '最近扫描: ' + r.ts;
+    renderScanResults(r.results || []);
+    // 更新雷达信号高亮
+    signalMap = {};
+    (r.results || []).forEach(res => { signalMap[res.symbol] = res.score; });
+    if (tickerData.length) renderChart();
+  }
+}
+
+function renderScanResults(results) {
+  const tbody = document.getElementById('scan-tbody');
+  if (!results.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:20px">暂无符合条件的信号</td></tr>';
+    return;
+  }
+  tbody.innerHTML = results.map(r => {
+    const stars = '★'.repeat(r.score);
+    const sCls  = 's' + Math.min(r.score, 4);
+    const dirCls = r.direction === 'LONG' ? 'green' : 'red';
+    const dirTxt = r.direction === 'LONG' ? '多▲' : '空▼';
+    const d = r.details;
+    return `<tr>
+      <td class="accent">${r.symbol}</td>
+      <td class="${sCls}">${stars}</td>
+      <td class="${dirCls}">${dirTxt}</td>
+      <td class="${d.vol.cls}">${d.vol.text}</td>
+      <td class="${d.rsi.cls}">${d.rsi.text}</td>
+      <td class="${d.mom.cls}">${d.mom.text}</td>
+      <td class="${d.bb.cls}">${d.bb.text}</td>
+      <td>${r.price.toFixed(4)}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="tradeSignal(${JSON.stringify(r).replace(/"/g,'&quot;')})">交易</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function tradeSignal(signal) {
+  const settings = getScanSettings();
+  const side = signal.direction === 'LONG' ? 'BUY' : 'SELL';
+  const cn   = side === 'BUY' ? '做多' : '做空';
+  if (!confirm(`交易信号\n交易对: ${signal.symbol}\n方向: ${cn}\n评分: ${signal.score}分\n金额: ${settings.trade_usdt} USDT\n杠杆: ${settings.leverage}x\n止损: ${settings.sl_pct}%  止盈: ${settings.tp_pct}%`)) return;
+
+  const priceR = await fetch('/api/price/' + signal.symbol).then(r=>r.json()).catch(()=>({}));
+  const price  = priceR.price || signal.price;
+  const qty    = Math.round(settings.trade_usdt / price * 1000) / 1000;
+
+  const r = await fetch('/api/order/sltp', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      symbol: signal.symbol, side, qty,
+      leverage: settings.leverage,
+      sl_pct: settings.sl_pct, tp_pct: settings.tp_pct
+    })
+  }).then(r=>r.json());
+
+  if (r.ok) { toast(`下单成功 ${cn} ${signal.symbol}  止损:${r.sl?.toFixed(4)}  止盈:${r.tp?.toFixed(4)}`, 'ok'); autoRefresh(); }
+  else toast('下单失败: ' + r.msg, 'err');
+}
+
+// ── Tabs ─────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const panels = ['trade','scanner'];
+    t.classList.toggle('active', panels[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+}
+
+// ── Radar Chart ──────────────────────────────────
+function initChart() {
+  const el = document.getElementById('radar-chart');
+  radarChart = echarts.init(el, null, {renderer:'canvas'});
+  window.addEventListener('resize', () => radarChart.resize());
+  radarChart.on('click', params => {
+    if (params.data) {
+      const sym = params.data[3];
+      document.getElementById('f-sym').value = sym;
+      toast('已选择: ' + sym, 'info');
+    }
+  });
+}
+
+async function loadTickers() {
+  const r = await fetch('/api/tickers').then(r=>r.json()).catch(()=>({tickers:[]}));
+  if (r.tickers?.length) {
+    tickerData = r.tickers;
+    renderChart();
+    document.getElementById('radar-ts').textContent = '更新: ' + new Date().toLocaleTimeString();
+  }
+}
+
+function renderChart() {
+  if (!radarChart || !tickerData.length) return;
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const mutedColor = isDark ? '#8e8e93' : '#8e8e93';
+  const textColor  = isDark ? '#c7c7cc' : '#555';
+  const gridColor  = isDark ? '#3a3a3c' : '#e0e0e0';
+  const bgColor    = isDark ? '#2c2c2e' : '#ffffff';
+
+  const maxVol = Math.max(...tickerData.map(t => t.vol));
+
+  const data = tickerData.map(t => {
+    const score = signalMap[t.symbol] || 0;
+    const size  = Math.max(6, Math.min(40, t.vol / maxVol * 40));
+    let color;
+    if (score >= 4) color = '#ff453a';
+    else if (score >= 3) color = '#ff8c00';
+    else if (score >= 2) color = '#ffd60a';
+    else color = t.chg > 0
+      ? `rgba(52,199,89,${0.5 + Math.min(Math.abs(t.chg)/20, 0.5)})`
+      : `rgba(255,59,48,${0.5 + Math.min(Math.abs(t.chg)/20, 0.5)})`;
+    return {
+      value: [t.chg, t.vol, size, t.symbol, score],
+      itemStyle: { color },
+      symbol: score >= 2 ? 'diamond' : 'circle',
+      symbolSize: score >= 2 ? size * 1.3 : size,
+    };
+  });
+
+  const labels = tickerData.slice(0, 25).map(t => ({
+    coord: [t.chg, t.vol],
+    value: (signalMap[t.symbol] >= 2 ? '★' : '') + t.symbol.replace('USDT',''),
+    label: {
+      show: true, position: 'right', fontSize: 9,
+      color: signalMap[t.symbol] >= 2 ? '#ffd60a' : textColor,
+      fontWeight: signalMap[t.symbol] >= 2 ? 'bold' : 'normal',
+    }
+  }));
+
+  radarChart.setOption({
+    backgroundColor: bgColor,
+    grid: { left: 55, right: 20, top: 30, bottom: 40 },
+    xAxis: {
+      type: 'value', name: '24h 涨跌幅 %',
+      nameTextStyle: { color: mutedColor, fontSize: 11 },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+      axisLabel: { color: mutedColor, fontSize: 10 },
+    },
+    yAxis: {
+      type: 'value', name: '成交额(亿)',
+      nameTextStyle: { color: mutedColor, fontSize: 11 },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+      axisLabel: { color: mutedColor, fontSize: 10 },
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: p => {
+        const [chg, vol, , sym, score] = p.data.value;
+        return `<b>${sym}</b><br>涨跌: ${chg.toFixed(2)}%<br>成交额: ${vol.toFixed(1)}亿<br>信号分: ${score}`;
+      }
+    },
+    series: [{
+      type: 'scatter', data,
+      markPoint: { data: labels, symbol: 'none' },
+    }],
+  }, true);
+}
+
+// ── Log ──────────────────────────────────────────
+async function loadLog() {
+  const r = await fetch('/api/log').then(r=>r.json()).catch(()=>({log:[]}));
+  const box = document.getElementById('log-box');
+  box.innerHTML = r.log.map(l =>
+    `<div class="log-entry"><span class="ts">[${l.ts}]</span><span class="${l.level}">${l.msg}</span></div>`
+  ).join('');
+}
+
+function clearLog() {
+  document.getElementById('log-box').innerHTML = '';
+}
+
+// ── Toast ────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.color = type==='ok' ? 'var(--green)' : type==='err' ? 'var(--red)' : 'var(--text)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display='none', 3000);
+}
+</script>
+</body>
+</html>
