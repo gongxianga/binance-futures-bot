@@ -260,6 +260,18 @@ select.form-inp { cursor: pointer; }
 .sig-tag.dn { background: #fee2e2; color: var(--red);   border-color: #fecaca; }
 .sig-trade { flex-shrink: 0; }
 .empty-state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 12px; }
+/* 历史信号对比 */
+.prev-section { margin-top: 14px; }
+.prev-hdr { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; padding: 6px 0 8px; border-top: 1px solid var(--border2); display: flex; align-items: center; gap: 8px; }
+.prev-hdr span { font-size: 10px; font-weight: 400; color: var(--muted); }
+.prev-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.prev-table th { color: var(--muted); font-weight: 600; font-size: 9px; letter-spacing: .8px; text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border2); }
+.prev-table td { padding: 5px 6px; border-bottom: 1px solid var(--border2); color: var(--text); font-family: var(--font-mono); vertical-align: middle; }
+.prev-table tr:last-child td { border-bottom: none; }
+.prev-table tr:hover td { background: var(--bg3); }
+.pnl-up   { color: var(--green); font-weight: 700; }
+.pnl-dn   { color: var(--red);   font-weight: 700; }
+.pnl-flat { color: var(--muted); }
 .empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: .5; display: block; }
 
 /* 持仓 */
@@ -494,6 +506,15 @@ tr:hover td { background: var(--bg3); }
               点击「开始扫描」启动策略雷达
             </div>
             <div class="signal-grid" id="scan-signals"></div>
+            <div class="prev-section" id="prev-section" style="display:none">
+              <div class="prev-hdr">上次信号表现 <span id="prev-ts-label"></span></div>
+              <table class="prev-table">
+                <thead><tr>
+                  <th>币种</th><th>方向</th><th>信号价</th><th>当前价</th><th>价格变化</th><th>预期盈亏</th><th>评分</th>
+                </tr></thead>
+                <tbody id="prev-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -713,6 +734,9 @@ async function loadScanStatus() {
     (r.results||[]).forEach(s=>{signalMap[s.symbol]=s.score;});
     if (tickerData.length) renderChart();
   }
+  if (r.prev_ts) {
+    renderPrevSignals(r.prev_results||[], r.prev_ts, r.ts);
+  }
 }
 function renderSignals(results) {
   const empty=document.getElementById('scan-empty');
@@ -741,6 +765,39 @@ function renderSignals(results) {
       '<div class="sig-price">'+r.price.toFixed(4)+'</div>' +
       '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal('+safeR+')">交易</button></div>' +
       '</div>';
+  }).join('');
+}
+function renderPrevSignals(prev, prevTs, curTs) {
+  const sec = document.getElementById('prev-section');
+  if (!prev.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  document.getElementById('prev-ts-label').textContent = prevTs + (curTs ? ' → ' + curTs : '');
+  document.getElementById('prev-tbody').innerHTML = prev.map(r=>{
+    const isLong = r.direction==='LONG';
+    const dirHtml = isLong
+      ? '<span style="color:var(--green);font-weight:700">▲ 多</span>'
+      : '<span style="color:var(--red);font-weight:700">▼ 空</span>';
+    let priceChgHtml = '--', pnlHtml = '--';
+    if (r.price_chg !== null && r.price_chg !== undefined) {
+      const sign = r.price_chg >= 0 ? '+' : '';
+      const cls  = r.price_chg > 0 ? 'pnl-up' : r.price_chg < 0 ? 'pnl-dn' : 'pnl-flat';
+      priceChgHtml = '<span class="'+cls+'">'+sign+r.price_chg.toFixed(2)+'%</span>';
+    }
+    if (r.pnl_pct !== null && r.pnl_pct !== undefined) {
+      const sign = r.pnl_pct >= 0 ? '+' : '';
+      const cls  = r.pnl_pct > 0 ? 'pnl-up' : r.pnl_pct < 0 ? 'pnl-dn' : 'pnl-flat';
+      pnlHtml = '<span class="'+cls+'">'+sign+r.pnl_pct.toFixed(2)+'%</span>';
+    }
+    const curPriceHtml = r.cur_price ? r.cur_price.toFixed(4) : '--';
+    return '<tr>' +
+      '<td><b>'+r.symbol.replace('USDT','')+'</b></td>' +
+      '<td>'+dirHtml+'</td>' +
+      '<td>'+r.price.toFixed(4)+'</td>' +
+      '<td>'+curPriceHtml+'</td>' +
+      '<td>'+priceChgHtml+'</td>' +
+      '<td>'+pnlHtml+'</td>' +
+      '<td><span style="color:var(--yellow)">'+'★'.repeat(r.score)+'</span></td>' +
+      '</tr>';
   }).join('');
 }
 async function tradeSignal(signal) {

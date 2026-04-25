@@ -56,6 +56,8 @@ state = {
     "next_scan_at": 0,
     "scan_results": [],
     "scan_ts": "",
+    "prev_scan_results": [],
+    "prev_scan_ts": "",
     "scan_progress": {"current": 0, "total": 0, "symbol": ""},
     "log": [],
 }
@@ -820,6 +822,22 @@ def api_scan_start():
                 results = signal_engine.scan(tickers, top_n=300)
                 min_score = int(settings.get("min_score", 2))
                 qualified = [r for r in results if r["score"] >= min_score]
+
+                # 保存上次结果并计算涨跌表现
+                if state["scan_results"]:
+                    price_map = {t["symbol"]: float(t["lastPrice"]) for t in tickers}
+                    prev = []
+                    for r in state["scan_results"]:
+                        cur = price_map.get(r["symbol"])
+                        if cur:
+                            chg = (cur - r["price"]) / r["price"] * 100
+                            pnl = chg * (1 if r["direction"] == "LONG" else -1)
+                            prev.append({**r, "cur_price": cur, "price_chg": round(chg, 3), "pnl_pct": round(pnl, 3)})
+                        else:
+                            prev.append({**r, "cur_price": None, "price_chg": None, "pnl_pct": None})
+                    state["prev_scan_results"] = prev
+                    state["prev_scan_ts"] = state["scan_ts"]
+
                 state["scan_results"] = qualified
                 state["scan_ts"] = datetime.now().strftime("%H:%M:%S")
                 add_log(f"第{cycle}轮完成: 扫描{min(300,len(tickers))}个，找到 {len(qualified)} 个 ≥{min_score}分 信号", "ok")
@@ -869,8 +887,10 @@ def api_scan_status():
     return jsonify({
         "running":   state["scan_running"],
         "countdown": f"{m:02d}:{s:02d}",
-        "results":   state["scan_results"],
-        "ts":        state["scan_ts"],
+        "results":      state["scan_results"],
+        "ts":           state["scan_ts"],
+        "prev_results": state["prev_scan_results"],
+        "prev_ts":      state["prev_scan_ts"],
         "progress":  state["scan_progress"],
     })
 
