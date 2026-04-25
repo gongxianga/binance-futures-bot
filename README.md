@@ -58,19 +58,26 @@
 
 ### 方式1：一键安装（推荐）
 
-**Linux / macOS:**
+**步骤1：克隆并安装**
 ```bash
 git clone https://github.com/gongxianga/binance-futures-bot.git
 cd binance-futures-bot
-chmod +x install.sh
+chmod +x install.sh start.sh
 ./install.sh
-python3 app.py
 ```
 
-**或者使用自动安装脚本：**
+**步骤2：启动程序**
 ```bash
-curl -sSL https://raw.githubusercontent.com/gongxianga/binance-futures-bot/main/install.sh | bash
+./start.sh
 ```
+
+或者手动启动：
+```bash
+source venv/bin/activate
+python app.py
+```
+
+> 💡 **说明**：安装脚本会自动创建虚拟环境（venv），避免污染系统Python环境。这是Python 3.12+的推荐做法。
 
 ### 方式2：手动安装
 
@@ -124,17 +131,19 @@ python app.py
 binance_futures_bot/
 ├── app.py                  # 主程序（已集成安全认证）
 ├── auth.py                 # 认证与安全模块
-├── install.sh             # 一键安装脚本
+├── install.sh              # 一键安装脚本（自动创建venv）
+├── start.sh                # 启动脚本
 ├── requirements.txt        # Python依赖
-├── config.json            # 币安API配置（加密）
-├── users.json             # 用户账户配置
-├── secret.key             # 加密密钥（请妥善保管）
+├── venv/                   # 虚拟环境目录（自动生成）
+├── config.json             # 币安API配置（加密）
+├── users.json              # 用户账户配置
+├── secret.key              # 加密密钥（请妥善保管）
 ├── templates/
-│   ├── index.html         # 主界面
-│   └── login.html         # 登录页面
-├── 安全功能说明.txt        # 详细安全说明
-├── test_security.py       # 安全功能测试脚本
-└── README.md              # 本文件
+│   ├── index.html          # 主界面
+│   └── login.html          # 登录页面
+├── 安全功能说明.txt         # 详细安全说明
+├── test_security.py        # 安全功能测试脚本
+└── README.md               # 本文件
 ```
 
 ## 🔧 高级配置
