@@ -125,9 +125,23 @@ class FuturesEngine:
         except Exception:
             return None
 
-    def place_order(self, symbol, side, otype, qty, price=None, lev=10):
+    def _safe_set_leverage(self, symbol, lev):
+        """设置杠杆，超出上限时自动降为该合约允许的最大值"""
         try:
             self.client.futures_change_leverage(symbol=symbol, leverage=lev)
+        except Exception:
+            try:
+                brackets = self.client.futures_leverage_bracket(symbol=symbol)
+                max_lev = brackets[0]["brackets"][0]["initialLeverage"]
+                use_lev = min(lev, max_lev)
+                self.client.futures_change_leverage(symbol=symbol, leverage=use_lev)
+                add_log(f"{symbol} 最大杠杆{max_lev}x，已自动调整", "warn")
+            except Exception as e:
+                add_log(f"{symbol} 杠杆设置失败: {e}", "warn")
+
+    def place_order(self, symbol, side, otype, qty, price=None, lev=10):
+        try:
+            self._safe_set_leverage(symbol, lev)
             p = dict(symbol=symbol, side=side, type=otype, quantity=qty)
             if otype == "LIMIT" and price:
                 p["price"] = price
@@ -138,7 +152,7 @@ class FuturesEngine:
 
     def place_with_sltp(self, symbol, side, qty, lev, sl_pct, tp_pct):
         try:
-            self.client.futures_change_leverage(symbol=symbol, leverage=lev)
+            self._safe_set_leverage(symbol, lev)
             order = self.client.futures_create_order(
                 symbol=symbol, side=side, type="MARKET", quantity=qty)
             price = float(order.get("avgPrice") or 0) or self.get_price(symbol) or 0
