@@ -274,8 +274,43 @@ class SignalEngine:
         std = (sum((x - sma) ** 2 for x in d) / period) ** 0.5
         return sma + 2 * std, sma, sma - 2 * std
 
+    @staticmethod
+    def _ema(closes, period):
+        if len(closes) < period:
+            return None
+        k = 2.0 / (period + 1)
+        ema = sum(closes[:period]) / period
+        for price in closes[period:]:
+            ema = price * k + ema * (1 - k)
+        return ema
+
+    @staticmethod
+    def _atr(klines, period=14):
+        if len(klines) < period + 1:
+            return None
+        trs = []
+        for i in range(1, len(klines)):
+            h = float(klines[i][2]); l = float(klines[i][3]); pc = float(klines[i-1][4])
+            trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+        return sum(trs[-period:]) / period
+
+    def _funding_rate(self, symbol):
+        """获取OKX资金费率，失败返回None"""
+        try:
+            url = f"https://www.okx.com/api/v5/public/funding-rate?instId={_symbol_to_okx(symbol)}"
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "python-requests/2.28")
+            req.add_header("Accept", "application/json")
+            with urllib.request.urlopen(req, timeout=5) as r:
+                data = json.loads(r.read()).get("data", [])
+            if data:
+                return float(data[0].get("fundingRate", 0))
+        except Exception:
+            pass
+        return None
+
     def analyze(self, symbol, ticker, all_tickers):
-        klines = self._klines(symbol)
+        klines = self._klines(symbol, limit=60)
         if not klines:
             return None
         closes  = [float(k[4]) for k in klines]
@@ -288,7 +323,7 @@ class SignalEngine:
         long_s = short_s = 0
         details = {}
 
-        # 量价突破
+        # 1. 量价突破
         vol_ratio = cur_vol / avg_vol if avg_vol > 0 else 0
         if vol_ratio >= 2.5:
             if chg_pct > 0: long_s += 1;  details["vol"] = {"text": "多", "cls": "green"}
@@ -296,30 +331,92 @@ class SignalEngine:
         else:
             details["vol"] = {"text": "--", "cls": "muted"}
 
-        # RSI
+        # 2. RSI
         rsi = self._rsi(closes)
         if rsi < 30:   long_s += 1;  details["rsi"] = {"text": f"{rsi:.0f}↑", "cls": "green"}
         elif rsi > 70: short_s += 1; details["rsi"] = {"text": f"{rsi:.0f}↓", "cls": "red"}
         else:                         details["rsi"] = {"text": f"{rsi:.0f}",  "cls": "muted"}
 
-        # 动量排名
+        # 3. 动量排名
         by_chg = sorted(all_tickers, key=lambda x: float(x["priceChangePercent"]), reverse=True)
         by_vol = sorted(all_tickers, key=lambda x: float(x["quoteVolume"]), reverse=True)
         rank_c = next((i for i, t in enumerate(by_chg) if t["symbol"] == symbol), 999)
         rank_v = next((i for i, t in enumerate(by_vol) if t["symbol"] == symbol), 999)
         n = len(all_tickers)
-        if rank_c < 5 and rank_v < 20:   long_s += 1;  details["mom"] = {"text": "强多", "cls": "green"}
+        if rank_c < 5 and rank_v < 20:    long_s += 1;  details["mom"] = {"text": "强多", "cls": "green"}
         elif rank_c > n-6 and rank_v < 20: short_s += 1; details["mom"] = {"text": "强空", "cls": "red"}
         else:                               details["mom"] = {"text": "--",   "cls": "muted"}
 
-        # 布林带
-        upper, _, lower = self._bollinger(closes)
+        # 4. 布林带
+        upper, mid_bb, lower = self._bollinger(closes)
         if upper and lower:
             if cur_price > upper:   long_s += 1;  details["bb"] = {"text": "突破上轨", "cls": "green"}
             elif cur_price < lower: short_s += 1; details["bb"] = {"text": "跌破下轨", "cls": "red"}
             else:                                  details["bb"] = {"text": "--", "cls": "muted"}
         else:
             details["bb"] = {"text": "--", "cls": "muted"}
+
+        # 5. EMA 金叉/死叉 (EMA20 vs EMA50)
+        ema20 = self._ema(closes, 20)
+        ema50 = self._ema(closes, 50)
+        if ema20 and ema50 and len(closes) > 51:
+            ema20_p = self._ema(closes[:-1], 20)
+            ema50_p = self._ema(closes[:-1], 50)
+            if ema20_p and ema50_p:
+                if ema20_p <= ema50_p and ema20 > ema50:
+                    long_s += 1; details["ema"] = {"text": "金叉↑", "cls": "green"}
+                elif ema20_p >= ema50_p and ema20 < ema50:
+                    short_s += 1; details["ema"] = {"text": "死叉↓", "cls": "red"}
+                else:
+                    trend = "多头" if ema20 > ema50 else "空头"
+                    details["ema"] = {"text": trend, "cls": "green" if ema20 > ema50 else "red"}
+            else:
+                details["ema"] = {"text": "--", "cls": "muted"}
+        else:
+            details["ema"] = {"text": "--", "cls": "muted"}
+
+        # 6. 挤压动量 (Bollinger Bands vs Keltner Channel)
+        atr = self._atr(klines)
+        if atr and ema20 and upper and lower:
+            kc_upper = ema20 + 1.5 * atr
+            kc_lower = ema20 - 1.5 * atr
+            in_sqz = upper < kc_upper and lower > kc_lower
+            if len(closes) > 1 and len(klines) > 1:
+                up_p, _, lo_p = self._bollinger(closes[:-1])
+                ema20_p2 = self._ema(closes[:-1], 20)
+                atr_p    = self._atr(klines[:-1])
+                if up_p and lo_p and ema20_p2 and atr_p:
+                    kcu_p   = ema20_p2 + 1.5 * atr_p
+                    kcl_p   = ema20_p2 - 1.5 * atr_p
+                    was_sqz = up_p < kcu_p and lo_p > kcl_p
+                    if was_sqz and not in_sqz:
+                        if cur_price > ema20:
+                            long_s += 1; details["sqz"] = {"text": "挤压↑", "cls": "green"}
+                        else:
+                            short_s += 1; details["sqz"] = {"text": "挤压↓", "cls": "red"}
+                    elif in_sqz:
+                        details["sqz"] = {"text": "蓄力中", "cls": "muted"}
+                    else:
+                        details["sqz"] = {"text": "--", "cls": "muted"}
+                else:
+                    details["sqz"] = {"text": "--", "cls": "muted"}
+            else:
+                details["sqz"] = {"text": "--", "cls": "muted"}
+        else:
+            details["sqz"] = {"text": "--", "cls": "muted"}
+
+        # 7. 资金费率极端值
+        fr = self._funding_rate(symbol)
+        if fr is not None:
+            fr_pct = fr * 100
+            if fr > 0.001:
+                short_s += 1; details["fr"] = {"text": f"{fr_pct:.3f}%↓", "cls": "red"}
+            elif fr < -0.0005:
+                long_s += 1;  details["fr"] = {"text": f"{fr_pct:.3f}%↑", "cls": "green"}
+            else:
+                details["fr"] = {"text": f"{fr_pct:.3f}%", "cls": "muted"}
+        else:
+            details["fr"] = {"text": "--", "cls": "muted"}
 
         score = max(long_s, short_s)
         if score == 0:
@@ -696,7 +793,7 @@ def api_scan_start():
     settings = request.json or {}
     state["scan_running"] = True
     state["next_scan_at"] = time.time()
-    add_log("策略扫描已启动（实时模式，前300个交易对）", "ok")
+    add_log("策略扫描已启动（每20分钟一轮，7策略混合，前300个交易对）", "ok")
 
     def _loop():
         cycle = 0
@@ -733,9 +830,9 @@ def api_scan_start():
                 time.sleep(5)
                 continue
 
-            # 每轮扫描完立即开始下一轮，短暂休息3秒避免触发限频
-            state["next_scan_at"] = time.time() + 3
-            time.sleep(3)
+            # 每20分钟扫描一轮
+            state["next_scan_at"] = time.time() + 1200
+            time.sleep(1200)
 
     threading.Thread(target=_loop, daemon=True).start()
     return jsonify({"ok": True})

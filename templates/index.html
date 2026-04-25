@@ -728,12 +728,15 @@ function renderSignals(results) {
       '<span class="sig-tag '+tc(d.rsi.cls)+'">RSI '+(d.rsi.text||'')+'</span>',
       '<span class="sig-tag '+tc(d.mom.cls)+'">动量 '+(d.mom.text||'')+'</span>',
       '<span class="sig-tag '+tc(d.bb.cls )+'">BB ' +(d.bb.text ||'')+'</span>',
+      '<span class="sig-tag '+tc(d.ema&&d.ema.cls)+'">EMA '+(d.ema&&d.ema.text||'--')+'</span>',
+      '<span class="sig-tag '+tc(d.sqz&&d.sqz.cls)+'">挤压 '+(d.sqz&&d.sqz.text||'--')+'</span>',
+      '<span class="sig-tag '+tc(d.fr &&d.fr.cls) +'">费率 '+(d.fr &&d.fr.text ||'--')+'</span>',
     ].join('');
     const safeR=JSON.stringify(r).replace(/"/g,'&quot;');
     return '<div class="signal-card '+(isLong?'long':'short')+'">' +
       '<div class="sig-sym">'+r.symbol.replace('USDT','')+'<span style="color:var(--muted);font-size:9px">/U</span></div>' +
       '<div class="sig-dir '+(isLong?'long':'short')+'">'+(isLong?'▲ 做多':'▼ 做空')+'</div>' +
-      '<div class="sig-stars">'+'★'.repeat(r.score)+'<span style="color:#dde1ea">'+'★'.repeat(4-r.score)+'</span></div>' +
+      '<div class="sig-stars">'+'★'.repeat(r.score)+'<span style="color:#dde1ea">'+'★'.repeat(Math.max(0,7-r.score))+'</span></div>' +
       '<div class="sig-tags">'+tags+'</div>' +
       '<div class="sig-price">'+r.price.toFixed(4)+'</div>' +
       '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal('+safeR+')">交易</button></div>' +
