@@ -32,7 +32,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .status.ok{color:var(--green)} .status.err{color:var(--red)}
 
 /* ── Body ── */
-.body{display:grid;grid-template-columns:500px 1fr;grid-template-rows:1fr auto auto;gap:8px;padding:8px;flex:1;overflow:hidden;min-height:0}
+.body{display:flex;flex-direction:row;padding:8px;gap:0;flex:1;overflow:hidden;min-height:0}
+
+/* ── Panels ── */
+.panel-left{width:380px;min-width:180px;display:flex;flex-direction:column;flex-shrink:0}
+.panel-mid{flex:1;min-width:260px;display:flex;flex-direction:column;overflow:hidden}
+.panel-right{width:280px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column}
+
+/* ── Resizers ── */
+.resizer-col{width:8px;cursor:col-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.resizer-col::after{content:'';width:3px;height:40px;background:var(--border);border-radius:2px;transition:background .15s}
+.resizer-col:hover::after,.resizer-col.dragging::after{background:var(--accent)}
+.resizer-row{height:8px;cursor:row-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.resizer-row::after{content:'';height:3px;width:40px;background:var(--border);border-radius:2px;transition:background .15s}
+.resizer-row:hover::after,.resizer-row.dragging::after{background:var(--accent)}
 
 /* ── Cards ── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
@@ -40,11 +53,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .card-hdr span{margin-left:auto}
 
 /* ── Radar ── */
-.radar-wrap{grid-row:1/2;grid-column:1/2;display:flex;flex-direction:column}
+.radar-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
 #radar-chart{flex:1;min-height:0}
 
 /* ── Right panel ── */
-.right{grid-row:1/2;grid-column:2/3;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 
 /* ── Tabs ── */
 .tabs{display:flex;border-bottom:1px solid var(--border);padding:0 14px}
@@ -100,9 +113,10 @@ tr:hover td{background:var(--bg3)}
 .s1{color:var(--yellow)} .s2{color:var(--yellow)} .s3{color:#ff8c00} .s4{color:var(--red)}
 
 /* ── Positions & Log ── */
-.positions{grid-row:2/3;grid-column:1/3}
-.log-panel{grid-row:3/4;grid-column:1/3;display:flex;flex-direction:column}
-.log-box{font-family:'Consolas',monospace;font-size:12px;overflow-y:auto;padding:8px 14px;flex:1;max-height:110px}
+.positions{flex-shrink:0;height:180px;overflow:hidden}
+.positions .tbl-wrap{overflow-y:auto;height:calc(100% - 36px)}
+.log-panel{flex:1;display:flex;flex-direction:column;min-height:0}
+.log-box{font-family:'Consolas',monospace;font-size:12px;overflow-y:auto;padding:8px 14px;flex:1}
 .log-box .ok{color:var(--green)} .log-box .err{color:var(--red)} .log-box .warn{color:var(--yellow)} .log-box .info{color:var(--muted)}
 .log-entry{margin-bottom:2px}
 .ts{color:var(--border);margin-right:8px}
@@ -143,134 +157,144 @@ tr:hover td{background:var(--bg3)}
 <!-- ── Body ── -->
 <div class="body">
 
-  <!-- Radar -->
-  <div class="card radar-wrap">
-    <div class="card-hdr">
-      市场雷达
-      <span style="color:var(--muted);font-size:11px" id="radar-ts"></span>
-      <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
+  <!-- 左列：雷达图 -->
+  <div class="panel-left">
+    <div class="card radar-wrap">
+      <div class="card-hdr">
+        市场雷达
+        <span style="color:var(--muted);font-size:11px" id="radar-ts"></span>
+        <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
+      </div>
+      <div id="radar-chart"></div>
     </div>
-    <div id="radar-chart"></div>
   </div>
 
-  <!-- Right tabs -->
-  <div class="card right">
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('trade')">交 易</div>
-      <div class="tab" onclick="switchTab('scanner')">策略扫描</div>
-    </div>
+  <div class="resizer-col" id="resizer-left"></div>
 
-    <!-- 交易 Tab -->
-    <div class="tab-panel active" id="tab-trade">
-      <div class="tab-body">
-        <!-- 账户 -->
-        <div class="acc-grid">
-          <div class="acc-item"><label>可用余额</label><div class="val" id="v-avail">-- USDT</div></div>
-          <div class="acc-item"><label>钱包余额</label><div class="val" id="v-wallet">-- USDT</div></div>
-          <div class="acc-item"><label>未实现盈亏</label><div class="val" id="v-pnl">-- USDT</div></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="loadAccount()">刷新账户</button>
-        <hr class="sep">
+  <!-- 中列：交易/扫描 + 持仓 -->
+  <div class="panel-mid">
 
-        <!-- 下单 -->
-        <div class="form-grid">
-          <label>交易对</label>
-          <div class="sym-row">
-            <input class="form-inp" id="f-sym" value="BTCUSDT" style="width:110px">
-            <span class="cur-price" id="f-cprice">--</span>
-            <button class="btn btn-ghost btn-sm" onclick="getPrice()">获取价格</button>
+    <!-- 交易/扫描 Tab -->
+    <div class="card right">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('trade')">交 易</div>
+        <div class="tab" onclick="switchTab('scanner')">策略扫描</div>
+      </div>
+
+      <div class="tab-panel active" id="tab-trade">
+        <div class="tab-body">
+          <div class="acc-grid">
+            <div class="acc-item"><label>可用余额</label><div class="val" id="v-avail">-- USDT</div></div>
+            <div class="acc-item"><label>钱包余额</label><div class="val" id="v-wallet">-- USDT</div></div>
+            <div class="acc-item"><label>未实现盈亏</label><div class="val" id="v-pnl">-- USDT</div></div>
           </div>
-          <label>订单类型</label>
-          <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
-            <option>MARKET</option><option>LIMIT</option>
-          </select>
-          <label>杠杆倍数</label>
-          <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
-          <label>数量</label>
-          <input class="form-inp" id="f-qty" value="0.001">
-          <label>限价</label>
-          <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单需要">
+          <button class="btn btn-ghost btn-sm" onclick="loadAccount()">刷新账户</button>
+          <hr class="sep">
+          <div class="form-grid">
+            <label>交易对</label>
+            <div class="sym-row">
+              <input class="form-inp" id="f-sym" value="BTCUSDT" style="width:110px">
+              <span class="cur-price" id="f-cprice">--</span>
+              <button class="btn btn-ghost btn-sm" onclick="getPrice()">获取价格</button>
+            </div>
+            <label>订单类型</label>
+            <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
+              <option>MARKET</option><option>LIMIT</option>
+            </select>
+            <label>杠杆倍数</label>
+            <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
+            <label>数量</label>
+            <input class="form-inp" id="f-qty" value="0.001">
+            <label>限价</label>
+            <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单需要">
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-long" onclick="manualOrder('BUY')">做  多  (买入)</button>
+            <button class="btn btn-short" onclick="manualOrder('SELL')">做  空  (卖出)</button>
+          </div>
+          <button class="btn btn-warn btn-sm" onclick="cancelOrders()">撤销当前交易对所有挂单</button>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-long" onclick="manualOrder('BUY')">做  多  (买入)</button>
-          <button class="btn btn-short" onclick="manualOrder('SELL')">做  空  (卖出)</button>
+      </div>
+
+      <div class="tab-panel" id="tab-scanner">
+        <div class="tab-body">
+          <div class="scan-settings">
+            <div class="scan-field"><label>最低信号分 (1-4)</label><input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4"></div>
+            <div class="scan-field"><label>每笔金额 (USDT)</label><input class="form-inp" id="s-usdt" value="100"></div>
+            <div class="scan-field"><label>杠杆倍数</label><input class="form-inp" id="s-lev" value="10" type="number"></div>
+            <div class="scan-field"><label>止损 %</label><input class="form-inp" id="s-sl" value="2.0"></div>
+            <div class="scan-field"><label>止盈 %</label><input class="form-inp" id="s-tp" value="4.0"></div>
+          </div>
+          <div class="mode-row">
+            <span style="font-size:12px;color:var(--muted)">执行模式:</span>
+            <label><input type="radio" name="mode" value="manual" checked> 手动确认</label>
+            <label><input type="radio" name="mode" value="auto"> 全自动</label>
+          </div>
+          <div class="scan-ctrl">
+            <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">▶ 开始扫描</button>
+            <button class="btn btn-ghost btn-sm" id="btn-scan-stop" onclick="stopScan()" disabled>■ 停止</button>
+            <span class="countdown" id="scan-status">状态: 未启动</span>
+          </div>
+          <div id="scan-progress-wrap" style="display:none;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+              <span id="scan-progress-text">正在扫描...</span>
+              <span id="scan-progress-pct">0%</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden">
+              <div id="scan-progress-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .3s"></div>
+            </div>
+          </div>
+          <hr class="sep">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:12px;font-weight:600;color:var(--muted)">扫描结果</span>
+            <span style="font-size:11px;color:var(--muted)" id="scan-ts"></span>
+          </div>
+          <div class="tbl-wrap">
+            <table id="scan-table">
+              <thead><tr>
+                <th>交易对</th><th>评分</th><th>方向</th>
+                <th>量价突破</th><th>RSI</th><th>动量</th><th>布林带</th>
+                <th>当前价</th><th>操作</th>
+              </tr></thead>
+              <tbody id="scan-tbody"><tr><td colspan="9" class="muted" style="padding:20px">点击「开始扫描」</td></tr></tbody>
+            </table>
+          </div>
         </div>
-        <button class="btn btn-warn btn-sm" onclick="cancelOrders()">撤销当前交易对所有挂单</button>
       </div>
     </div>
 
-    <!-- 策略扫描 Tab -->
-    <div class="tab-panel" id="tab-scanner">
-      <div class="tab-body">
-        <div class="scan-settings">
-          <div class="scan-field"><label>最低信号分 (1-4)</label><input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4"></div>
-          <div class="scan-field"><label>每笔金额 (USDT)</label><input class="form-inp" id="s-usdt" value="100"></div>
-          <div class="scan-field"><label>杠杆倍数</label><input class="form-inp" id="s-lev" value="10" type="number"></div>
-          <div class="scan-field"><label>止损 %</label><input class="form-inp" id="s-sl" value="2.0"></div>
-          <div class="scan-field"><label>止盈 %</label><input class="form-inp" id="s-tp" value="4.0"></div>
-        </div>
-        <div class="mode-row">
-          <span style="font-size:12px;color:var(--muted)">执行模式:</span>
-          <label><input type="radio" name="mode" value="manual" checked> 手动确认</label>
-          <label><input type="radio" name="mode" value="auto"> 全自动</label>
-        </div>
-        <div class="scan-ctrl">
-          <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">▶ 开始扫描</button>
-          <button class="btn btn-ghost btn-sm" id="btn-scan-stop" onclick="stopScan()" disabled>■ 停止</button>
-          <span class="countdown" id="scan-status">状态: 未启动</span>
-        </div>
-        <div id="scan-progress-wrap" style="display:none;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
-            <span id="scan-progress-text">正在扫描...</span>
-            <span id="scan-progress-pct">0%</span>
-          </div>
-          <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden">
-            <div id="scan-progress-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .3s"></div>
-          </div>
-        </div>
-        <hr class="sep">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:12px;font-weight:600;color:var(--muted)">扫描结果</span>
-          <span style="font-size:11px;color:var(--muted)" id="scan-ts"></span>
-        </div>
-        <div class="tbl-wrap">
-          <table id="scan-table">
-            <thead><tr>
-              <th>交易对</th><th>评分</th><th>方向</th>
-              <th>量价突破</th><th>RSI</th><th>动量</th><th>布林带</th>
-              <th>当前价</th><th>操作</th>
-            </tr></thead>
-            <tbody id="scan-tbody"><tr><td colspan="9" class="muted" style="padding:20px">点击「开始扫描」</td></tr></tbody>
-          </table>
-        </div>
+    <div class="resizer-row" id="resizer-mid"></div>
+
+    <!-- 持仓 -->
+    <div class="card positions">
+      <div class="card-hdr">
+        当前持仓
+        <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
+            <th>标记价</th><th>未实现盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
+          </tr></thead>
+          <tbody id="pos-tbody"><tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr></tbody>
+        </table>
       </div>
     </div>
+
   </div>
 
-  <!-- Positions -->
-  <div class="card positions">
-    <div class="card-hdr">
-      当前持仓
-      <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
-          <th>标记价</th><th>未实现盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
-        </tr></thead>
-        <tbody id="pos-tbody"><tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr></tbody>
-      </table>
-    </div>
-  </div>
+  <div class="resizer-col" id="resizer-right"></div>
 
-  <!-- Log -->
-  <div class="card log-panel">
-    <div class="card-hdr">
-      操作日志
-      <button class="btn btn-ghost btn-sm" onclick="clearLog()">清除</button>
+  <!-- 右列：日志 -->
+  <div class="panel-right">
+    <div class="card log-panel">
+      <div class="card-hdr">
+        操作日志
+        <button class="btn btn-ghost btn-sm" onclick="clearLog()">清除</button>
+      </div>
+      <div class="log-box" id="log-box"></div>
     </div>
-    <div class="log-box" id="log-box"></div>
   </div>
 
 </div>
@@ -686,6 +710,107 @@ function toast(msg, type='info') {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.style.display='none', 3000);
 }
+
+// ── Resizable Panels ─────────────────────────────
+function initColResizer(resizerId, leftSel, rightSel) {
+  const resizer = document.getElementById(resizerId);
+  const leftEl  = document.querySelector(leftSel);
+  const rightEl = document.querySelector(rightSel);
+  if (!resizer || !leftEl || !rightEl) return;
+
+  resizer.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const startX   = e.clientX;
+    const startW   = leftEl.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = e => {
+      const dx = e.clientX - startX;
+      const newW = Math.max(180, startW + dx);
+      leftEl.style.width = newW + 'px';
+      if (radarChart) radarChart.resize();
+    };
+    const onUp = () => {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (radarChart) radarChart.resize();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function initRowResizer(resizerId, topSel) {
+  const resizer = document.getElementById(resizerId);
+  const topEl   = document.querySelector(topSel);
+  if (!resizer || !topEl) return;
+
+  resizer.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = topEl.offsetHeight;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = e => {
+      const dy = e.clientY - startY;
+      const newH = Math.max(120, startH + dy);
+      topEl.style.flex = 'none';
+      topEl.style.height = newH + 'px';
+    };
+    const onUp = () => {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function initColResizerRight(resizerId, rightSel) {
+  const resizer  = document.getElementById(resizerId);
+  const rightEl  = document.querySelector(rightSel);
+  if (!resizer || !rightEl) return;
+
+  resizer.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = rightEl.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = e => {
+      const dx = e.clientX - startX;
+      rightEl.style.width = Math.max(160, startW - dx) + 'px';
+    };
+    const onUp = () => {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// 初始化拖拽
+window.addEventListener('load', () => {
+  initColResizer('resizer-left', '.panel-left', '.panel-mid');
+  initColResizerRight('resizer-right', '.panel-right');
+  initRowResizer('resizer-mid', '.right');
+}, { once: false });
 </script>
 </body>
 </html>
