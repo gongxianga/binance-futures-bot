@@ -23,20 +23,30 @@ body {
   font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
 }
 
 .login-box {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 40px;
-  width: 420px;
-  max-width: 90%;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;
   box-shadow: var(--shadow);
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    border-radius: 12px;
+    padding: 28px 20px;
+    margin: 16px;
+    max-width: calc(100% - 32px);
+  }
 }
 
 .logo {
@@ -164,46 +174,6 @@ body {
   color: var(--green);
 }
 
-.footer {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.security-info {
-  background: var(--bg3);
-  border-radius: 8px;
-  padding: 14px;
-  margin-top: 24px;
-}
-
-.security-info h3 {
-  font-size: 13px;
-  color: var(--text);
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.security-info ul {
-  list-style: none;
-  padding: 0;
-}
-
-.security-info li {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 4px 0;
-  padding-left: 16px;
-  position: relative;
-}
-
-.security-info li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-}
 </style>
 </head>
 <body>
@@ -240,34 +210,7 @@ body {
     <button type="submit" class="btn" id="btn-login">登 录</button>
   </form>
 
-  <div class="security-info">
-    <h3>🔒 安全特性</h3>
-    <ul>
-      <li>用户名/密码登录认证</li>
-      <li>验证码防暴力破解</li>
-      <li>登录失败次数限制 (5次)</li>
-      <li>API密钥加密存储</li>
-      <li>IP白名单访问控制</li>
-      <li>会话安全管理</li>
-    </ul>
-  </div>
 
-  <div class="footer">
-    默认账户: <strong>admin</strong> / <strong>admin123</strong><br>
-    首次登录后请立即修改密码
-  </div>
-
-  <div class="security-info" style="margin-top: 16px; background: var(--bg3); padding: 14px; border-radius: 8px;">
-    <h3 style="font-size: 13px; color: var(--text); margin-bottom: 10px; font-weight: 600;">🚀 一键安装命令</h3>
-    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: 'Consolas', monospace; font-size: 11px; color: var(--accent); overflow-x: auto; cursor: pointer;" onclick="copyInstallCmd()" title="点击复制">
-      <div>git clone https://github.com/gongxianga/binance-futures-bot.git</div>
-      <div>cd binance-futures-bot</div>
-      <div>chmod +x install.sh start.sh</div>
-      <div>./install.sh</div>
-      <div>./start.sh</div>
-    </div>
-    <div style="text-align: center; margin-top: 8px; font-size: 11px; color: var(--muted);">点击命令框可复制 · 自动使用虚拟环境</div>
-  </div>
 </div>
 
 <script>
@@ -343,27 +286,6 @@ window.addEventListener('load', () => {
   document.getElementById('username').focus();
 });
 
-// 复制安装命令
-function copyInstallCmd() {
-  const commands = `git clone https://github.com/gongxianga/binance-futures-bot.git
-cd binance-futures-bot
-chmod +x install.sh start.sh
-./install.sh
-./start.sh`;
-
-  navigator.clipboard.writeText(commands).then(() => {
-    showAlert('安装命令已复制到剪贴板！', 'success');
-  }).catch(() => {
-    // 兼容旧浏览器
-    const textarea = document.createElement('textarea');
-    textarea.value = commands;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    showAlert('安装命令已复制到剪贴板！', 'success');
-  });
-}
 </script>
 
 </body>
