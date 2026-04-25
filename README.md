@@ -124,6 +124,7 @@ python app.py
 binance_futures_bot/
 ├── app.py                  # 主程序（已集成安全认证）
 ├── auth.py                 # 认证与安全模块
+├── install.sh             # 一键安装脚本
 ├── requirements.txt        # Python依赖
 ├── config.json            # 币安API配置（加密）
 ├── users.json             # 用户账户配置
@@ -132,7 +133,6 @@ binance_futures_bot/
 │   ├── index.html         # 主界面
 │   └── login.html         # 登录页面
 ├── 安全功能说明.txt        # 详细安全说明
-├── 启动.bat               # Windows启动脚本
 ├── test_security.py       # 安全功能测试脚本
 └── README.md              # 本文件
 ```
@@ -202,11 +202,12 @@ rate_limiter = LoginRateLimiter(
 
 1. **开放防火墙端口**
    ```bash
-   # Linux
+   # Linux/Ubuntu
    sudo ufw allow 5000
 
-   # Windows
-   # 在防火墙设置中添加入站规则
+   # CentOS/RHEL
+   sudo firewall-cmd --permanent --add-port=5000/tcp
+   sudo firewall-cmd --reload
    ```
 
 2. **配置IP白名单**（推荐）
