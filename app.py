@@ -601,24 +601,25 @@ def api_connect():
     if not key or not secret:
         return jsonify({"ok": False, "msg": "请填写 API Key 和 Secret"})
 
+    # 无论连接是否成功都先保存密钥
+    encrypted_key = api_encryptor.encrypt(key)
+    encrypted_secret = api_encryptor.encrypt(secret)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump({
+            "api_key": encrypted_key,
+            "api_secret": encrypted_secret,
+            "testnet": testnet
+        }, f)
+
     eng = FuturesEngine()
     ok, msg = eng.connect(key, secret, testnet)
     if ok:
         engine = eng
         state["connected"] = True
         state["testnet"] = testnet
-        # 加密保存 API 密钥
-        encrypted_key = api_encryptor.encrypt(key)
-        encrypted_secret = api_encryptor.encrypt(secret)
-        with open(CONFIG_FILE, "w") as f:
-            json.dump({
-                "api_key": encrypted_key,
-                "api_secret": encrypted_secret,
-                "testnet": testnet
-            }, f)
         add_log(f"连接成功 ({'测试网' if testnet else '正式网'})", "ok")
     else:
-        add_log(f"连接失败: {msg}", "err")
+        add_log(f"连接失败（密钥已保存）: {msg}", "err")
     return jsonify({"ok": ok, "msg": msg})
 
 
