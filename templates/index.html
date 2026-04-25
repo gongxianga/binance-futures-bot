@@ -219,6 +219,15 @@ tr:hover td{background:var(--bg3)}
           <button class="btn btn-ghost btn-sm" id="btn-scan-stop" onclick="stopScan()" disabled>■ 停止</button>
           <span class="countdown" id="scan-status">状态: 未启动</span>
         </div>
+        <div id="scan-progress-wrap" style="display:none;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+            <span id="scan-progress-text">正在扫描...</span>
+            <span id="scan-progress-pct">0%</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden">
+            <div id="scan-progress-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .3s"></div>
+          </div>
+        </div>
         <hr class="sep">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:12px;font-weight:600;color:var(--muted)">扫描结果</span>
@@ -475,9 +484,23 @@ async function loadScanStatus() {
   document.getElementById('btn-scan-start').disabled = r.running;
   document.getElementById('btn-scan-stop').disabled  = !r.running;
 
-  if (r.running) {
-    document.getElementById('scan-status').textContent = `状态: 下次扫描 ${r.countdown}`;
+  // 显示进度条
+  const prog = r.progress || {};
+  const progressWrap = document.getElementById('scan-progress-wrap');
+  if (prog.total > 0) {
+    const pct = Math.round(prog.current / prog.total * 100);
+    progressWrap.style.display = 'block';
+    document.getElementById('scan-progress-text').textContent = `正在扫描 ${prog.current}/${prog.total}: ${prog.symbol}`;
+    document.getElementById('scan-progress-pct').textContent = pct + '%';
+    document.getElementById('scan-progress-bar').style.width = pct + '%';
+    document.getElementById('scan-status').textContent = '状态: 扫描中...';
+  } else {
+    progressWrap.style.display = 'none';
+    if (r.running) {
+      document.getElementById('scan-status').textContent = `状态: 下次扫描 ${r.countdown}`;
+    }
   }
+
   if (r.ts) {
     document.getElementById('scan-ts').textContent = '最近扫描: ' + r.ts;
     renderScanResults(r.results || []);

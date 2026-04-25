@@ -55,6 +55,7 @@ state = {
     "next_scan_at": 0,
     "scan_results": [],
     "scan_ts": "",
+    "scan_progress": {"current": 0, "total": 0, "symbol": ""},
     "log": [],
 }
 
@@ -281,10 +282,12 @@ class SignalEngine:
         results = []
         top = tickers[:top_n]
         for i, t in enumerate(top):
+            state["scan_progress"] = {"current": i + 1, "total": len(top), "symbol": t["symbol"]}
             add_log(f"扫描中 {i+1}/{len(top)}: {t['symbol']}", "info")
             r = self.analyze(t["symbol"], t, tickers)
             if r:
                 results.append(r)
+        state["scan_progress"] = {"current": 0, "total": 0, "symbol": ""}
         results.sort(key=lambda x: x["score"], reverse=True)
         return results
 
@@ -646,6 +649,7 @@ def api_scan_status():
         "countdown": f"{m:02d}:{s:02d}",
         "results":   state["scan_results"],
         "ts":        state["scan_ts"],
+        "progress":  state["scan_progress"],
     })
 
 
