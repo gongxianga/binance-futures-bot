@@ -116,6 +116,13 @@ class FuturesEngine:
         try:
             return float(self.client.futures_symbol_ticker(symbol=symbol)["price"])
         except Exception:
+            pass
+        # 回退直接 HTTP
+        try:
+            url = f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={symbol}"
+            with urllib.request.urlopen(url, timeout=5) as r:
+                return float(json.loads(r.read())["price"])
+        except Exception:
             return None
 
     def place_order(self, symbol, side, otype, qty, price=None, lev=10):
@@ -171,15 +178,31 @@ class FuturesEngine:
 
 
 def get_tickers():
-    try:
-        req = urllib.request.Request("https://fapi.binance.com/fapi/v1/ticker/24hr")
-        req.add_header("User-Agent", "Mozilla/5.0")
-        with urllib.request.urlopen(req, timeout=10) as r:
-            data = json.loads(r.read())
-        return sorted([d for d in data if d["symbol"].endswith("USDT")],
-                      key=lambda x: float(x["quoteVolume"]), reverse=True)
-    except Exception:
-        return []
+    # 优先用已认证的客户端（绕过地理限制）
+    if engine and state["connected"]:
+        try:
+            data = engine.client.futures_ticker()
+            return sorted([d for d in data if d["symbol"].endswith("USDT")],
+                          key=lambda x: float(x["quoteVolume"]), reverse=True)
+        except Exception as e:
+            add_log(f"客户端行情失败: {e}", "warn")
+
+    # 回退：直接 HTTP
+    for url in [
+        "https://fapi.binance.com/fapi/v1/ticker/24hr",
+        "https://fapi1.binance.com/fapi/v1/ticker/24hr",
+        "https://fapi2.binance.com/fapi/v1/ticker/24hr",
+    ]:
+        try:
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "Mozilla/5.0")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.loads(r.read())
+            return sorted([d for d in data if d["symbol"].endswith("USDT")],
+                          key=lambda x: float(x["quoteVolume"]), reverse=True)
+        except Exception:
+            continue
+    return []
 
 
 # ─────────────────────────────────────────────
@@ -190,6 +213,13 @@ class SignalEngine:
     KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
 
     def _klines(self, symbol, interval="1h", limit=50):
+        # 优先用已认证客户端
+        if state["connected"]:
+            try:
+                return self.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
+            except Exception:
+                pass
+        # 回退直接 HTTP
         try:
             url = f"{self.KLINE_URL}?symbol={symbol}&interval={interval}&limit={limit}"
             req = urllib.request.Request(url)
