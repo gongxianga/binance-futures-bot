@@ -13,6 +13,7 @@ import threading
 import urllib.request
 import webbrowser
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -193,9 +194,10 @@ class SignalEngine:
             url = f"{self.KLINE_URL}?symbol={symbol}&interval={interval}&limit={limit}"
             req = urllib.request.Request(url)
             req.add_header("User-Agent", "Mozilla/5.0")
-            with urllib.request.urlopen(req, timeout=8) as r:
+            with urllib.request.urlopen(req, timeout=5) as r:
                 return json.loads(r.read())
-        except Exception:
+        except Exception as e:
+            add_log(f"K线获取失败 {symbol}: {e}", "warn")
             return []
 
     @staticmethod
@@ -281,14 +283,32 @@ class SignalEngine:
     def scan(self, tickers, top_n=30):
         results = []
         top = tickers[:top_n]
-        for i, t in enumerate(top):
-            state["scan_progress"] = {"current": i + 1, "total": len(top), "symbol": t["symbol"]}
-            add_log(f"扫描中 {i+1}/{len(top)}: {t['symbol']}", "info")
+        total = len(top)
+        completed = 0
+        lock = threading.Lock()
+
+        def _analyze_one(item):
+            i, t = item
             r = self.analyze(t["symbol"], t, tickers)
-            if r:
-                results.append(r)
+            return i, t["symbol"], r
+
+        state["scan_progress"] = {"current": 0, "total": total, "symbol": ""}
+        add_log(f"开始并发扫描 {total} 个交易对...", "info")
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(_analyze_one, (i, t)): i for i, t in enumerate(top)}
+            for future in as_completed(futures):
+                i, symbol, r = future.result()
+                with lock:
+                    completed += 1
+                    state["scan_progress"] = {"current": completed, "total": total, "symbol": symbol}
+                if r:
+                    with lock:
+                        results.append(r)
+
         state["scan_progress"] = {"current": 0, "total": 0, "symbol": ""}
         results.sort(key=lambda x: x["score"], reverse=True)
+        add_log(f"扫描完成，共找到 {len(results)} 个有效信号", "info")
         return results
 
 
