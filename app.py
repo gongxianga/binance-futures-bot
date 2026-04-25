@@ -518,13 +518,37 @@ def api_positions():
     return jsonify({"ok": True, "positions": result})
 
 
+def _public_price(symbol):
+    """无需认证，直接调用币安合约公开行情接口"""
+    try:
+        url = f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={symbol.upper()}"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read())
+            return float(data["price"])
+    except Exception:
+        try:
+            url = f"https://testnet.binancefuture.com/fapi/v1/ticker/price?symbol={symbol.upper()}"
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                data = json.loads(resp.read())
+                return float(data["price"])
+        except Exception:
+            return None
+
+
 @app.route("/api/price/<symbol>")
 @login_required
 def api_price(symbol):
-    if not state["connected"] or not engine:
-        return jsonify({"ok": False})
-    price = engine.get_price(symbol.upper())
-    return jsonify({"ok": bool(price), "price": price})
+    sym = symbol.upper()
+    # 已连接时优先用已认证的客户端
+    if state["connected"] and engine:
+        price = engine.get_price(sym)
+        if price:
+            return jsonify({"ok": True, "price": price})
+    # 回退到公开接口（无需 API Key）
+    price = _public_price(sym)
+    if price:
+        return jsonify({"ok": True, "price": price})
+    return jsonify({"ok": False, "msg": "无法获取价格，请检查交易对名称"})
 
 
 @app.route("/api/order", methods=["POST"])

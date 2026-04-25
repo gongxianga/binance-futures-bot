@@ -3,214 +3,251 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>登录 - 币安合约交易软件</title>
+<title>BINANCE FUTURES BOT — LOGIN</title>
 <style>
 :root {
-  --bg: #f2f2f7; --bg2: #ffffff; --bg3: #e5e5ea;
-  --text: #1c1c1e; --muted: #8e8e93; --border: #c7c7cc;
-  --accent: #007aff; --green: #34c759; --red: #ff3b30;
-  --shadow: 0 2px 8px rgba(0,0,0,.12);
+  --bg:     #050a12;
+  --bg2:    #080f1c;
+  --bg3:    #0b1526;
+  --border: rgba(0,240,255,.2);
+  --text:   #cce8ff;
+  --muted:  #4a7a9b;
+  --cyan:   #00f0ff;
+  --green:  #00ff88;
+  --red:    #ff2d6b;
+  --font-mono: 'Consolas','SF Mono','Courier New',monospace;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#000; --bg2:#1c1c1e; --bg3:#2c2c2e;
-  --text:#f2f2f7; --muted:#8e8e93; --border:#38383a;
-  --accent:#0a84ff; --green:#30d158; --red:#ff453a;
-  --shadow:0 2px 12px rgba(0,0,0,.5);
-}}
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-mono);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,240,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,240,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: grid-drift 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes grid-drift { 0% { background-position: 0 0; } 100% { background-position: 40px 40px; } }
+
+/* Scanlines */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,240,255,.012) 2px, rgba(0,240,255,.012) 4px);
+  pointer-events: none; z-index: 0;
+}
+
+.login-wrap {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 400px;
   padding: 16px;
 }
 
-.login-box {
-  background: var(--bg2);
+/* Corner brackets */
+.bracket-box {
+  position: relative;
+  background: rgba(8,15,28,.95);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 36px 32px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: var(--shadow);
+  border-radius: 4px;
+  padding: 40px 36px;
+  box-shadow: 0 0 60px rgba(0,240,255,.1), 0 20px 80px rgba(0,0,0,.8), inset 0 0 60px rgba(0,240,255,.02);
 }
+.bracket-box::before, .bracket-box::after {
+  content: '';
+  position: absolute; width: 20px; height: 20px;
+  border-color: var(--cyan); border-style: solid;
+}
+.bracket-box::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.bracket-box::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+.bracket-tl, .bracket-br {
+  position: absolute; width: 20px; height: 20px;
+  border-color: var(--cyan); border-style: solid;
+}
+.bracket-tl { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.bracket-br { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
 
-@media (max-width: 480px) {
-  .login-box {
-    border-radius: 12px;
-    padding: 28px 20px;
-    margin: 16px;
-    max-width: calc(100% - 32px);
-  }
+.top-line {
+  position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan-line 3s ease-in-out infinite;
+}
+@keyframes scan-line {
+  0%,100% { opacity: .4; }
+  50%      { opacity: 1; box-shadow: 0 0 8px var(--cyan); }
 }
 
 .logo {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
-
+.logo-icon {
+  width: 56px; height: 56px; margin: 0 auto 16px;
+  background: rgba(0,240,255,.06);
+  border: 1px solid rgba(0,240,255,.4);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 20px rgba(0,240,255,.3), inset 0 0 20px rgba(0,240,255,.05);
+  animation: logo-glow 3s ease-in-out infinite;
+}
+@keyframes logo-glow {
+  0%,100% { box-shadow: 0 0 20px rgba(0,240,255,.3), inset 0 0 20px rgba(0,240,255,.05); }
+  50%      { box-shadow: 0 0 40px rgba(0,240,255,.6), inset 0 0 30px rgba(0,240,255,.1); }
+}
 .logo h1 {
-  font-size: 24px;
-  color: var(--accent);
-  margin-bottom: 8px;
+  font-size: 16px; font-weight: 700;
+  color: var(--cyan); letter-spacing: 4px;
+  text-shadow: 0 0 12px rgba(0,240,255,.6);
+  margin-bottom: 6px;
 }
+.logo p { font-size: 10px; color: var(--muted); letter-spacing: 2px; }
 
-.logo p {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
+.form-group { margin-bottom: 18px; }
 .form-group label {
-  display: block;
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  font-weight: 500;
+  display: block; font-size: 10px; color: var(--muted);
+  margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase;
 }
-
 .inp {
   width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: rgba(0,240,255,.04);
+  border: 1px solid rgba(0,240,255,.2);
+  border-radius: 4px;
   padding: 12px 14px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   transition: all .2s;
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
 }
-
 .inp:focus {
-  border-color: var(--accent);
-  background: var(--bg2);
+  border-color: var(--cyan);
+  background: rgba(0,240,255,.07);
+  box-shadow: 0 0 0 2px rgba(0,240,255,.15), 0 0 16px rgba(0,240,255,.2);
 }
+.inp::placeholder { color: var(--muted); }
 
-.captcha-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.captcha-row .inp {
-  flex: 1;
-}
-
+.captcha-row { display: flex; gap: 10px; align-items: flex-end; }
+.captcha-row .inp { flex: 1; }
 .captcha-img {
-  width: 120px;
-  height: 40px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  cursor: pointer;
-  background: var(--bg3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity .2s;
+  width: 112px; height: 42px;
+  border: 1px solid rgba(0,240,255,.2); border-radius: 4px;
+  cursor: pointer; overflow: hidden;
+  background: rgba(0,240,255,.04);
+  transition: all .2s;
 }
-
-.captcha-img:hover {
-  opacity: .8;
-}
-
-.captcha-img img {
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-}
+.captcha-img:hover { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,240,255,.3); }
+.captcha-img img { width: 100%; height: 100%; display: block; }
 
 .btn {
   width: 100%;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
+  background: rgba(0,240,255,.08);
+  color: var(--cyan);
+  border: 1px solid rgba(0,240,255,.4);
+  border-radius: 4px;
   padding: 14px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 12px; font-weight: 700;
   cursor: pointer;
-  transition: opacity .2s;
+  transition: all .2s;
   margin-top: 8px;
+  font-family: var(--font-mono);
+  letter-spacing: 3px; text-transform: uppercase;
+  box-shadow: 0 0 12px rgba(0,240,255,.2);
 }
-
 .btn:hover {
-  opacity: .9;
+  background: rgba(0,240,255,.14);
+  box-shadow: 0 0 24px rgba(0,240,255,.5), 0 0 8px rgba(0,240,255,.3);
+  transform: translateY(-1px);
 }
-
-.btn:active {
-  opacity: .8;
-}
-
-.btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
+.btn:active { transform: translateY(0); opacity: .9; }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .alert {
-  padding: 12px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 20px;
-  display: none;
+  padding: 10px 14px; border-radius: 4px;
+  font-size: 11px; margin-bottom: 18px; display: none;
+  letter-spacing: 1px;
+  font-family: var(--font-mono);
 }
-
 .alert.error {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid var(--red);
-  color: var(--red);
+  background: rgba(255,45,107,.08); border: 1px solid rgba(255,45,107,.3);
+  color: var(--red); box-shadow: 0 0 12px rgba(255,45,107,.15);
 }
-
 .alert.success {
-  background: rgba(52, 199, 89, 0.1);
-  border: 1px solid var(--green);
-  color: var(--green);
+  background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.3);
+  color: var(--green); box-shadow: 0 0 12px rgba(0,255,136,.15);
 }
 
+.status-bar {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 24px; font-size: 9px; color: var(--muted); letter-spacing: 2px;
+}
+.status-dot {
+  width: 5px; height: 5px; background: var(--green); border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 </style>
 </head>
 <body>
 
-<div class="login-box">
-  <div class="logo">
-    <h1>⚡ BINANCE FUTURES BOT</h1>
-    <p>v4.0 安全增强版</p>
-  </div>
+<div class="login-wrap">
+  <div class="bracket-box">
+    <div class="top-line"></div>
+    <div class="bracket-tl"></div>
+    <div class="bracket-br"></div>
 
-  <div class="alert" id="alert"></div>
-
-  <form id="login-form" onsubmit="login(event)">
-    <div class="form-group">
-      <label>用户名</label>
-      <input type="text" class="inp" id="username" placeholder="请输入用户名" required autocomplete="username">
+    <div class="logo">
+      <div class="logo-icon">&#9889;</div>
+      <h1>BINANCE FUTURES</h1>
+      <p>AUTHENTICATION REQUIRED &mdash; v4.0</p>
     </div>
 
-    <div class="form-group">
-      <label>密码</label>
-      <input type="password" class="inp" id="password" placeholder="请输入密码" required autocomplete="current-password">
-    </div>
+    <div class="alert" id="alert"></div>
 
-    <div class="form-group">
-      <label>验证码</label>
-      <div class="captcha-row">
-        <input type="text" class="inp" id="captcha" placeholder="请输入验证码" required autocomplete="off" maxlength="4">
-        <div class="captcha-img" onclick="refreshCaptcha()">
-          <img id="captcha-image" src="/api/auth/captcha" alt="验证码">
+    <form id="login-form" onsubmit="login(event)">
+      <div class="form-group">
+        <label>User ID</label>
+        <input type="text" class="inp" id="username" placeholder="ENTER USERNAME" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" class="inp" id="password" placeholder="ENTER PASSWORD" required autocomplete="current-password">
+      </div>
+
+      <div class="form-group">
+        <label>Captcha Verify</label>
+        <div class="captcha-row">
+          <input type="text" class="inp" id="captcha" placeholder="ENTER CODE" required autocomplete="off" maxlength="4">
+          <div class="captcha-img" onclick="refreshCaptcha()" title="Click to refresh">
+            <img id="captcha-image" src="/api/auth/captcha" alt="captcha">
+          </div>
         </div>
       </div>
+
+      <button type="submit" class="btn" id="btn-login">ACCESS SYSTEM</button>
+    </form>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      SECURE CONNECTION &mdash; ENCRYPTED CHANNEL
     </div>
-
-    <button type="submit" class="btn" id="btn-login">登 录</button>
-  </form>
-
-
+  </div>
 </div>
 
 <script>
@@ -220,73 +257,49 @@ function refreshCaptcha() {
   document.getElementById('captcha').focus();
 }
 
-function showAlert(msg, type = 'error') {
-  const alert = document.getElementById('alert');
-  alert.textContent = msg;
-  alert.className = 'alert ' + type;
-  alert.style.display = 'block';
-  setTimeout(() => {
-    alert.style.display = 'none';
-  }, 5000);
+function showAlert(msg, type) {
+  const el = document.getElementById('alert');
+  el.textContent = msg;
+  el.className = 'alert ' + (type || 'error');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
 }
 
 async function login(e) {
   e.preventDefault();
-
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
-  const captcha = document.getElementById('captcha').value.trim();
-
-  if (!username || !password || !captcha) {
-    showAlert('请填写所有字段');
-    return;
-  }
+  const captcha  = document.getElementById('captcha').value.trim();
+  if (!username || !password || !captcha) { showAlert('ALL FIELDS REQUIRED'); return; }
 
   const btn = document.getElementById('btn-login');
-  btn.disabled = true;
-  btn.textContent = '登录中...';
+  btn.disabled = true; btn.textContent = 'AUTHENTICATING...';
 
   try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, captcha })
     });
-
-    const data = await response.json();
-
+    const data = await res.json();
     if (data.ok) {
-      showAlert('登录成功，正在跳转...', 'success');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 800);
+      showAlert('ACCESS GRANTED — REDIRECTING...', 'success');
+      setTimeout(() => window.location.href = '/', 800);
     } else {
-      showAlert(data.msg || '登录失败');
+      showAlert(data.msg || 'ACCESS DENIED');
       refreshCaptcha();
-      btn.disabled = false;
-      btn.textContent = '登 录';
+      btn.disabled = false; btn.textContent = 'ACCESS SYSTEM';
     }
-  } catch (error) {
-    showAlert('网络错误: ' + error.message);
+  } catch (err) {
+    showAlert('NETWORK ERROR: ' + err.message);
     refreshCaptcha();
-    btn.disabled = false;
-    btn.textContent = '登 录';
+    btn.disabled = false; btn.textContent = 'ACCESS SYSTEM';
   }
 }
 
-// 回车提交
-document.getElementById('captcha').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    login(e);
-  }
+document.getElementById('captcha').addEventListener('keypress', e => {
+  if (e.key === 'Enter') login(e);
 });
-
-// 页面加载完成，聚焦用户名输入框
-window.addEventListener('load', () => {
-  document.getElementById('username').focus();
-});
-
+window.addEventListener('load', () => document.getElementById('username').focus());
 </script>
-
 </body>
 </html>

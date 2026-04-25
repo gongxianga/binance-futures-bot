@@ -3,40 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>币安合约交易 v4.0</title>
+<title>BINANCE FUTURES BOT v4.0</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
+/* ── 科幻基础变量 ── */
 :root {
-  --bg:      #f0f2f5;
-  --bg2:     #ffffff;
-  --bg3:     #f5f6fa;
-  --bg4:     #eef0f6;
-  --text:    #1a1d2e;
-  --muted:   #8b8fa8;
-  --border:  #e2e5f1;
-  --accent:  #4f6ef7;
-  --accent2: #7c3aed;
-  --green:   #10b981;
-  --red:     #ef4444;
-  --yellow:  #f59e0b;
-  --cyan:    #06b6d4;
-  --shadow:  0 2px 16px rgba(79,110,247,.08);
-  --shadow2: 0 4px 32px rgba(79,110,247,.14);
-  --grad:    linear-gradient(135deg, #4f6ef7, #7c3aed);
-  --grad2:   linear-gradient(135deg, #10b981, #06b6d4);
-  --grad3:   linear-gradient(135deg, #ef4444, #f59e0b);
+  --bg:      #050a12;
+  --bg2:     #080f1c;
+  --bg3:     #0b1526;
+  --bg4:     #0f1d33;
+  --panel:   rgba(8,15,28,.92);
+  --border:  rgba(0,240,255,.15);
+  --border2: rgba(0,240,255,.08);
+  --text:    #cce8ff;
+  --muted:   #4a7a9b;
+  --cyan:    #00f0ff;
+  --green:   #00ff88;
+  --red:     #ff2d6b;
+  --yellow:  #ffd700;
+  --purple:  #9b5de5;
+  --blue:    #2979ff;
+  --glow-c:  0 0 12px rgba(0,240,255,.6);
+  --glow-g:  0 0 12px rgba(0,255,136,.6);
+  --glow-r:  0 0 12px rgba(255,45,107,.6);
+  --shadow:  0 4px 32px rgba(0,0,0,.8);
+  --font-mono: 'Consolas','SF Mono','Courier New',monospace;
 }
-@media (prefers-color-scheme: dark) { :root {
-  --bg:     #0f1117; --bg2: #161b27; --bg3: #1e2435; --bg4: #242a3a;
-  --text:   #e8eaf6; --muted: #6b7280; --border: #2d3452;
-  --accent: #6175f7; --accent2: #9061f9;
-  --green:  #10d98b; --red: #f87171; --yellow: #fbbf24; --cyan: #22d3ee;
-  --shadow: 0 2px 16px rgba(0,0,0,.3); --shadow2: 0 4px 32px rgba(0,0,0,.5);
-}}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 13px;
@@ -46,386 +42,540 @@ body {
   overflow: hidden;
 }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* ── 背景网格动画 ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,240,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,240,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+  animation: grid-drift 20s linear infinite;
+}
+@keyframes grid-drift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
 
-/* Header */
+/* ── 扫描线动画 ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,.012) 2px,
+    rgba(0,240,255,.012) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(0,240,255,.3); border-radius: 2px; }
+
+/* ── Header ── */
 .hdr {
-  background: var(--bg2);
+  position: relative; z-index: 10;
+  background: linear-gradient(90deg, var(--bg2) 0%, rgba(0,240,255,.04) 50%, var(--bg2) 100%);
   border-bottom: 1px solid var(--border);
   padding: 0 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 56px;
+  gap: 14px;
+  height: 58px;
   flex-shrink: 0;
-  box-shadow: var(--shadow);
-  z-index: 10;
+  box-shadow: 0 2px 40px rgba(0,240,255,.08), inset 0 -1px 0 rgba(0,240,255,.2);
 }
-.hdr-logo { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
+
+.logo-box {
+  display: flex; align-items: center; gap: 12px;
+}
 .logo-icon {
-  width: 34px; height: 34px;
-  background: var(--grad);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  box-shadow: 0 2px 8px rgba(79,110,247,.35);
-  flex-shrink: 0;
-}
-.hdr-title { font-size: 15px; font-weight: 700; color: var(--text); }
-.hdr-sub   { font-size: 11px; color: var(--muted); }
-.hdr-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
-.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.inp {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, #00f0ff22, #00f0ff44);
+  border: 1px solid var(--cyan);
   border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--glow-c), inset 0 0 12px rgba(0,240,255,.1);
+  flex-shrink: 0;
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%,100% { box-shadow: var(--glow-c), inset 0 0 12px rgba(0,240,255,.1); }
+  50%      { box-shadow: 0 0 24px rgba(0,240,255,.8), inset 0 0 20px rgba(0,240,255,.2); }
+}
+.logo-text { line-height: 1.3; }
+.logo-title {
+  font-size: 13px; font-weight: 700;
+  color: var(--cyan); letter-spacing: 2px; text-transform: uppercase;
+  text-shadow: var(--glow-c);
+}
+.logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; font-family: var(--font-mono); }
+
+.hdr-sep { width: 1px; height: 30px; background: var(--border); flex-shrink: 0; }
+
+.inp {
+  background: rgba(0,240,255,.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   padding: 6px 11px;
   color: var(--text);
   font-size: 12px;
   outline: none;
   transition: all .2s;
+  font-family: var(--font-mono);
 }
-.inp:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px rgba(79,110,247,.12); }
+.inp:focus {
+  border-color: var(--cyan);
+  background: rgba(0,240,255,.08);
+  box-shadow: 0 0 0 2px rgba(0,240,255,.15), var(--glow-c);
+}
+.inp::placeholder { color: var(--muted); }
+
 .chk { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.status { font-size: 12px; white-space: nowrap; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
-.status.ok  { color: var(--green); background: rgba(16,185,129,.12); }
-.status.err { color: var(--red); background: rgba(239,68,68,.10); }
-.user-tag {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--muted);
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 20px; padding: 4px 12px;
+.chk:hover { color: var(--cyan); }
+
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.status-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 4px;
+  font-family: var(--font-mono); letter-spacing: 1px;
+  text-transform: uppercase;
 }
-.user-avatar {
-  width: 20px; height: 20px; background: var(--grad);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 10px; color: #fff; font-weight: 700;
+.status-badge.ok  {
+  color: var(--green); background: rgba(0,255,136,.08);
+  border: 1px solid rgba(0,255,136,.3);
+  box-shadow: var(--glow-g);
+  animation: blink-green 2s ease-in-out infinite;
+}
+.status-badge.err {
+  color: var(--red); background: rgba(255,45,107,.08);
+  border: 1px solid rgba(255,45,107,.3);
+}
+@keyframes blink-green {
+  0%,100% { box-shadow: var(--glow-g); }
+  50%      { box-shadow: 0 0 20px rgba(0,255,136,.8); }
 }
 
-/* Body */
+.user-chip {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(0,240,255,.06); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 12px; font-size: 11px;
+  font-family: var(--font-mono); color: var(--cyan);
+}
+.user-dot {
+  width: 6px; height: 6px; background: var(--green);
+  border-radius: 50%; box-shadow: var(--glow-g);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Body ── */
 .body {
+  position: relative; z-index: 1;
   display: flex; flex-direction: row;
-  padding: 10px; gap: 0;
+  padding: 8px; gap: 0;
   flex: 1; overflow: hidden; min-height: 0;
 }
 
-/* Panels */
-.panel-left  { width: 300px; min-width: 220px; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; }
-.panel-main  { flex: 1; min-width: 400px; display: flex; flex-direction: column; overflow: hidden; }
-.panel-right { width: 260px; min-width: 180px; flex-shrink: 0; display: flex; flex-direction: column; }
+/* ── Panels ── */
+.panel-left  { width: 296px; min-width: 220px; display: flex; flex-direction: column; flex-shrink: 0; gap: 7px; }
+.panel-main  { flex: 1; min-width: 380px; display: flex; flex-direction: column; overflow: hidden; }
+.panel-right { width: 258px; min-width: 180px; flex-shrink: 0; display: flex; flex-direction: column; }
 
-/* Resizers */
+/* ── Resizers ── */
 .resizer-col {
   width: 10px; cursor: col-resize; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .resizer-col::after {
-  content: ''; width: 3px; height: 48px;
-  background: var(--border); border-radius: 2px; transition: all .2s;
+  content: ''; width: 2px; height: 48px;
+  background: var(--border2); border-radius: 1px; transition: all .2s;
 }
-.resizer-col:hover::after, .resizer-col.dragging::after { background: var(--accent); height: 64px; }
+.resizer-col:hover::after, .resizer-col.dragging::after {
+  background: var(--cyan); height: 64px; box-shadow: var(--glow-c);
+}
 .resizer-row {
   height: 10px; cursor: row-resize; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .resizer-row::after {
-  content: ''; height: 3px; width: 48px;
-  background: var(--border); border-radius: 2px; transition: all .2s;
+  content: ''; height: 2px; width: 48px;
+  background: var(--border2); border-radius: 1px; transition: all .2s;
 }
-.resizer-row:hover::after, .resizer-row.dragging::after { background: var(--accent); width: 64px; }
+.resizer-row:hover::after, .resizer-row.dragging::after {
+  background: var(--cyan); width: 64px; box-shadow: var(--glow-c);
+}
 
-/* Cards */
+/* ── Cards ── */
 .card {
-  background: var(--bg2);
+  background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 0 40px rgba(0,240,255,.02);
+  backdrop-filter: blur(8px);
+  position: relative;
 }
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: .4;
+}
+
 .card-hdr {
-  padding: 11px 16px;
-  font-size: 11px; font-weight: 700;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
+  padding: 9px 14px;
+  font-size: 10px; font-weight: 700;
+  color: var(--cyan);
+  border-bottom: 1px solid var(--border2);
   display: flex; align-items: center; gap: 8px;
-  letter-spacing: .5px; text-transform: uppercase;
-  background: var(--bg3);
+  letter-spacing: 2px; text-transform: uppercase;
+  font-family: var(--font-mono);
+  background: rgba(0,240,255,.03);
 }
-.card-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
-  animation: pulse-dot 2s ease-in-out infinite;
+.hdr-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cyan); box-shadow: var(--glow-c);
+  animation: blink 2s ease-in-out infinite;
 }
-.card-dot.green  { background: var(--green);  box-shadow: 0 0 6px var(--green); }
-.card-dot.cyan   { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan); }
-.card-dot.muted  { background: var(--muted);  box-shadow: none; animation: none; }
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: .55; transform: scale(.75); }
-}
-.card-hdr-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.hdr-dot.green  { background: var(--green); box-shadow: var(--glow-g); }
+.hdr-dot.red    { background: var(--red);   box-shadow: var(--glow-r); }
+.hdr-dot.off    { background: var(--muted); box-shadow: none; animation: none; }
+.card-hdr-r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* Account chips */
-.acc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px 14px 8px; }
+/* ── Stat chips ── */
+.acc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 12px; }
 .acc-chip {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px 12px;
+  background: rgba(0,240,255,.04); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 10px 10px 8px;
+  position: relative; overflow: hidden;
 }
-.acc-chip label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; letter-spacing: .3px; text-transform: uppercase; }
-.acc-chip .val { font-size: 15px; font-weight: 700; color: var(--green); }
-.acc-chip .val.neg     { color: var(--red); }
-.acc-chip .val.neutral { color: var(--text); }
+.acc-chip::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: .3;
+}
+.acc-chip label {
+  display: block; font-size: 9px; color: var(--muted);
+  margin-bottom: 5px; letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--font-mono);
+}
+.acc-chip .val { font-size: 14px; font-weight: 700; color: var(--green); font-family: var(--font-mono); text-shadow: var(--glow-g); }
+.acc-chip .val.neg     { color: var(--red);  text-shadow: var(--glow-r); }
+.acc-chip .val.neutral { color: var(--cyan); text-shadow: var(--glow-c); }
 
-/* Form */
-.form-section { padding: 12px 14px; }
-.form-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.form-row label { font-size: 11px; color: var(--muted); width: 64px; text-align: right; flex-shrink: 0; }
+/* ── Form ── */
+.form-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.form-row label { font-size: 10px; color: var(--muted); width: 60px; text-align: right; flex-shrink: 0; letter-spacing: .8px; text-transform: uppercase; font-family: var(--font-mono); }
 .form-inp {
-  flex: 1; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 8px; padding: 7px 10px; color: var(--text);
-  font-size: 12px; outline: none; transition: all .2s;
+  flex: 1; background: rgba(0,240,255,.04); border: 1px solid var(--border);
+  border-radius: 5px; padding: 7px 10px; color: var(--text);
+  font-size: 12px; outline: none; transition: all .2s; font-family: var(--font-mono);
 }
-.form-inp:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px rgba(79,110,247,.10); }
+.form-inp:focus { border-color: var(--cyan); background: rgba(0,240,255,.07); box-shadow: 0 0 0 2px rgba(0,240,255,.12); }
+.form-inp::placeholder { color: var(--muted); }
 select.form-inp { cursor: pointer; }
+select.form-inp option { background: var(--bg3); }
+
 .sym-row { flex: 1; display: flex; gap: 6px; align-items: center; }
-.cur-price { font-size: 18px; font-weight: 700; color: var(--yellow); text-align: center; margin: -2px 0 10px; }
+.cur-price {
+  font-family: var(--font-mono); font-size: 20px; font-weight: 700;
+  color: var(--yellow); text-align: center; margin: -2px 0 10px;
+  text-shadow: 0 0 12px rgba(255,215,0,.6);
+  letter-spacing: 1px;
+}
 
-/* Buttons */
+/* ── Buttons ── */
 .btn {
-  border: none; border-radius: 8px; padding: 7px 14px;
-  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; border-radius: 5px; padding: 7px 14px;
+  font-size: 11px; font-weight: 700; cursor: pointer;
   transition: all .18s; white-space: nowrap;
+  font-family: var(--font-mono); letter-spacing: 1px; text-transform: uppercase;
 }
-.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
-.btn:active { transform: translateY(0); opacity: .85; }
-.btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+.btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.btn:active { transform: translateY(0); filter: brightness(.9); }
+.btn:disabled { opacity: .3; cursor: default; transform: none; filter: none; }
 .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.btn-long    { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.3); }
-.btn-short   { background: var(--red);   color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,.3); }
-.btn-primary { background: var(--grad);  color: #fff; box-shadow: 0 2px 8px rgba(79,110,247,.3); }
-.btn-ghost   { background: var(--bg3);   color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--bg4); }
-.btn-warn    { background: rgba(245,158,11,.12); color: var(--yellow); border: 1px solid rgba(245,158,11,.25); }
-.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
-.sep { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 
-/* Main split: radar left, scanner right */
-.main-top {
-  flex: 1; display: flex; flex-direction: row; gap: 0;
-  overflow: hidden; min-height: 0;
+.btn-long {
+  background: rgba(0,255,136,.12); color: var(--green);
+  border-color: rgba(0,255,136,.4);
+  box-shadow: var(--glow-g);
 }
-.radar-card {
-  width: 44%; min-width: 260px; flex-shrink: 0;
-  display: flex; flex-direction: column;
+.btn-long:hover { background: rgba(0,255,136,.2); box-shadow: 0 0 20px rgba(0,255,136,.6); }
+
+.btn-short {
+  background: rgba(255,45,107,.12); color: var(--red);
+  border-color: rgba(255,45,107,.4);
+  box-shadow: var(--glow-r);
 }
+.btn-short:hover { background: rgba(255,45,107,.2); box-shadow: 0 0 20px rgba(255,45,107,.6); }
+
+.btn-primary {
+  background: rgba(0,240,255,.12); color: var(--cyan);
+  border-color: rgba(0,240,255,.4);
+  box-shadow: var(--glow-c);
+}
+.btn-primary:hover { background: rgba(0,240,255,.2); box-shadow: 0 0 20px rgba(0,240,255,.6); }
+
+.btn-ghost {
+  background: rgba(0,240,255,.05); color: var(--muted);
+  border-color: var(--border);
+}
+.btn-ghost:hover { color: var(--cyan); border-color: var(--cyan); }
+
+.btn-warn {
+  background: rgba(255,215,0,.08); color: var(--yellow);
+  border-color: rgba(255,215,0,.3);
+}
+.btn-sm { padding: 4px 10px; font-size: 10px; border-radius: 4px; }
+.sep { border: none; border-top: 1px solid var(--border2); margin: 10px 0; }
+
+/* ── Main split ── */
+.main-top { flex: 1; display: flex; flex-direction: row; gap: 0; overflow: hidden; min-height: 0; }
+.radar-card   { width: 44%; min-width: 260px; flex-shrink: 0; display: flex; flex-direction: column; }
 .scanner-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-/* Radar */
+/* ── Radar ── */
 .radar-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 #radar-chart { width: 100%; height: 100%; }
 
-/* Animated radar rings */
 .radar-ring {
-  position: absolute; border-radius: 50%;
-  border: 1px solid rgba(79,110,247,.2);
-  pointer-events: none;
-  animation: ring-expand 4s ease-out infinite;
+  position: absolute; border-radius: 50%; border: 1px solid;
+  pointer-events: none; transform-origin: center;
+  top: 50%; left: 50%;
 }
-.radar-ring:nth-child(1) { width: 30%; padding-top: 30%; top: 35%; left: 35%; animation-delay: 0s; }
-.radar-ring:nth-child(2) { width: 55%; padding-top: 55%; top: 22.5%; left: 22.5%; animation-delay: 1.3s; border-color: rgba(79,110,247,.12); }
-.radar-ring:nth-child(3) { width: 80%; padding-top: 80%; top: 10%; left: 10%; animation-delay: 2.6s; border-color: rgba(79,110,247,.06); }
-@keyframes ring-expand {
-  0%   { opacity: .8; transform: scale(.9); }
-  100% { opacity: 0;  transform: scale(1.1); }
+.radar-ring:nth-child(1) {
+  width: 80px; height: 80px; margin: -40px 0 0 -40px;
+  border-color: rgba(0,240,255,.35);
+  animation: ring-pulse 3s ease-out infinite;
+}
+.radar-ring:nth-child(2) {
+  width: 160px; height: 160px; margin: -80px 0 0 -80px;
+  border-color: rgba(0,240,255,.2);
+  animation: ring-pulse 3s ease-out infinite .8s;
+}
+.radar-ring:nth-child(3) {
+  width: 240px; height: 240px; margin: -120px 0 0 -120px;
+  border-color: rgba(0,240,255,.1);
+  animation: ring-pulse 3s ease-out infinite 1.6s;
+}
+.radar-ring:nth-child(4) {
+  width: 320px; height: 320px; margin: -160px 0 0 -160px;
+  border-color: rgba(0,240,255,.05);
+  animation: ring-pulse 3s ease-out infinite 2.4s;
+}
+@keyframes ring-pulse {
+  0%   { opacity: .9; transform: scale(.8); }
+  100% { opacity: 0;  transform: scale(1.4); }
 }
 
-/* Sweep animation */
 .scan-sweep {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: conic-gradient(from 0deg at 50% 50%, transparent 340deg, rgba(79,110,247,.18) 360deg);
-  border-radius: 0;
-  animation: sweep 3.5s linear infinite;
+  background: conic-gradient(from 0deg at 50% 50%,
+    transparent 0deg,
+    rgba(0,240,255,.04) 20deg,
+    rgba(0,240,255,.12) 40deg,
+    transparent 60deg);
+  animation: sweep 4s linear infinite;
   display: none; pointer-events: none;
 }
 .scan-sweep.active { display: block; }
 @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* Scanner settings */
-.scan-settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.scan-field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+/* ── Scanner ── */
+.scan-settings-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; margin-bottom: 9px; }
+.scan-field label { display: block; font-size: 9px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono); }
 .scan-ctrl { display: flex; gap: 8px; align-items: center; }
-.countdown { font-size: 11px; color: var(--muted); }
 .progress-wrap { flex: 1; }
-.progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-.progress-bar-bg { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; height: 5px; overflow: hidden; }
-.progress-bar { height: 100%; background: var(--grad); border-radius: 4px; width: 0%; transition: width .3s; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; font-family: var(--font-mono); }
+.progress-bar-bg { background: rgba(0,240,255,.05); border: 1px solid var(--border2); border-radius: 2px; height: 4px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple)); border-radius: 2px; width: 0%; transition: width .3s; box-shadow: var(--glow-c); }
 
-/* Signal cards */
-.signal-grid { display: flex; flex-direction: column; gap: 6px; }
+/* ── Signal cards ── */
+.signal-grid { display: flex; flex-direction: column; gap: 5px; }
 .signal-card {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px 12px;
-  display: flex; align-items: center; gap: 10px;
-  transition: all .2s;
+  background: rgba(0,240,255,.03); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 9px 12px;
+  display: flex; align-items: center; gap: 9px;
+  transition: all .2s; position: relative; overflow: hidden;
 }
-.signal-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(79,110,247,.12); transform: translateX(2px); }
-.signal-card.long  { border-left: 3px solid var(--green); }
-.signal-card.short { border-left: 3px solid var(--red); }
-.sig-sym { font-size: 13px; font-weight: 700; color: var(--text); min-width: 76px; }
-.sig-dir { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
-.sig-dir.long  { background: rgba(16,185,129,.12); color: var(--green); }
-.sig-dir.short { background: rgba(239,68,68,.10);  color: var(--red); }
-.sig-stars { color: var(--yellow); font-size: 12px; letter-spacing: -1px; }
-.sig-price { font-size: 12px; color: var(--muted); margin-left: auto; }
+.signal-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 3px; bottom: 0;
+}
+.signal-card.long  { border-color: rgba(0,255,136,.2); }
+.signal-card.long::before  { background: var(--green); box-shadow: var(--glow-g); }
+.signal-card.short { border-color: rgba(255,45,107,.2); }
+.signal-card.short::before { background: var(--red); box-shadow: var(--glow-r); }
+.signal-card:hover { background: rgba(0,240,255,.06); border-color: rgba(0,240,255,.3); transform: translateX(3px); }
+
+.sig-sym { font-size: 13px; font-weight: 700; color: var(--cyan); min-width: 76px; font-family: var(--font-mono); text-shadow: var(--glow-c); }
+.sig-dir { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px; font-family: var(--font-mono); letter-spacing: 1px; }
+.sig-dir.long  { background: rgba(0,255,136,.1); color: var(--green); border: 1px solid rgba(0,255,136,.3); }
+.sig-dir.short { background: rgba(255,45,107,.1); color: var(--red);   border: 1px solid rgba(255,45,107,.3); }
+.sig-stars { color: var(--yellow); font-size: 13px; letter-spacing: -1px; text-shadow: 0 0 8px rgba(255,215,0,.6); }
+.sig-price { font-size: 11px; color: var(--muted); margin-left: auto; font-family: var(--font-mono); }
 .sig-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
-.sig-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bg4); color: var(--muted); border: 1px solid var(--border); }
-.sig-tag.up { background: rgba(16,185,129,.10);  color: var(--green); border-color: rgba(16,185,129,.2); }
-.sig-tag.dn { background: rgba(239,68,68,.08);   color: var(--red);   border-color: rgba(239,68,68,.18); }
-.sig-trade  { flex-shrink: 0; }
-.empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 12px; }
-.empty-icon  { font-size: 32px; margin-bottom: 8px; opacity: .4; }
+.sig-tag { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(0,240,255,.05); color: var(--muted); border: 1px solid var(--border2); font-family: var(--font-mono); }
+.sig-tag.up { background: rgba(0,255,136,.08); color: var(--green); border-color: rgba(0,255,136,.25); }
+.sig-tag.dn { background: rgba(255,45,107,.08); color: var(--red);   border-color: rgba(255,45,107,.25); }
+.sig-trade { flex-shrink: 0; }
 
-/* Positions */
-.positions-card { flex-shrink: 0; height: 170px; overflow: hidden; }
-.positions-card .tbl-wrap { overflow-y: auto; height: calc(100% - 40px); }
+.empty-state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 12px; font-family: var(--font-mono); }
+.empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: .35; display: block; }
 
-/* Tables */
+/* ── Positions ── */
+.positions-card { flex-shrink: 0; height: 165px; overflow: hidden; }
+
+/* ── Tables ── */
 .tbl-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: var(--font-mono); }
 th {
-  background: var(--bg3); padding: 7px 10px;
-  text-align: center; font-weight: 700; color: var(--muted);
-  white-space: nowrap; border-bottom: 1px solid var(--border);
-  font-size: 10px; letter-spacing: .3px; text-transform: uppercase;
+  background: rgba(0,240,255,.04); padding: 6px 8px;
+  text-align: center; font-weight: 700; color: var(--cyan);
+  white-space: nowrap; border-bottom: 1px solid var(--border2);
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
 }
-td { padding: 7px 10px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
-tr:hover td { background: var(--bg3); }
-.green  { color: var(--green); }
-.red    { color: var(--red); }
+td { padding: 7px 8px; text-align: center; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+tr:hover td { background: rgba(0,240,255,.03); }
+.green  { color: var(--green); text-shadow: var(--glow-g); }
+.red    { color: var(--red);   text-shadow: var(--glow-r); }
 .yellow { color: var(--yellow); }
 .muted  { color: var(--muted); }
-.accent { color: var(--accent); font-weight: 600; }
+.accent { color: var(--cyan);  text-shadow: var(--glow-c); font-weight: 700; }
 
-/* Log */
+/* ── Log ── */
 .log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .log-box {
-  font-family: 'Consolas', 'SF Mono', monospace; font-size: 11px;
-  overflow-y: auto; padding: 10px 14px; flex: 1; line-height: 1.65;
+  font-family: var(--font-mono); font-size: 11px;
+  overflow-y: auto; padding: 10px 12px; flex: 1; line-height: 1.7;
+  color: rgba(0,240,255,.6);
 }
-.log-entry { margin-bottom: 1px; }
-.ts { color: var(--border); margin-right: 6px; font-size: 10px; }
+.log-entry { margin-bottom: 0; }
+.ts { color: rgba(0,240,255,.25); margin-right: 6px; font-size: 10px; }
 .log-box .ok   { color: var(--green); }
-.log-box .err  { color: var(--red); }
+.log-box .err  { color: var(--red); text-shadow: var(--glow-r); }
 .log-box .warn { color: var(--yellow); }
-.log-box .info { color: var(--muted); }
+.log-box .info { color: rgba(0,240,255,.5); }
 
-/* Toast */
+/* ── Toast ── */
 #toast {
-  position: fixed; bottom: 24px; right: 24px;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 18px; font-size: 13px;
-  box-shadow: var(--shadow2); display: none; z-index: 999;
-  max-width: 300px; animation: slideUp .2s ease;
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 16px; font-size: 12px;
+  font-family: var(--font-mono);
+  box-shadow: var(--shadow), var(--glow-c);
+  display: none; z-index: 999;
+  max-width: 320px; animation: slideUp .2s ease;
 }
 @keyframes slideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Countdown label ── */
+.countdown { font-size: 10px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 1px; }
 </style>
 </head>
 <body>
 
 <!-- Header -->
 <div class="hdr">
-  <div class="hdr-logo">
+  <div class="logo-box">
     <div class="logo-icon">&#9889;</div>
-    <div>
-      <div class="hdr-title">Binance Futures Bot</div>
-      <div class="hdr-sub">v4.0 &middot; 合约量化交易</div>
+    <div class="logo-text">
+      <div class="logo-title">Binance Futures</div>
+      <div class="logo-sub">v4.0 &nbsp;&#9679;&nbsp; FUTURES BOT SYSTEM</div>
     </div>
   </div>
 
-  <div class="hdr-divider"></div>
+  <div class="hdr-sep"></div>
 
-  <input class="inp" id="inp-key"    type="password" placeholder="API Key"    style="width:148px">
-  <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:148px">
-  <label class="chk"><input type="checkbox" id="chk-testnet" checked> 测试网</label>
-  <button class="btn btn-primary btn-sm" id="btn-connect" onclick="connect()">连 接</button>
-  <span class="status err" id="conn-status">&#9679; 未连接</span>
+  <input class="inp" id="inp-key"    type="password" placeholder="API KEY"    style="width:146px">
+  <input class="inp" id="inp-secret" type="password" placeholder="API SECRET" style="width:146px">
+  <label class="chk"><input type="checkbox" id="chk-testnet" checked> TESTNET</label>
+  <button class="btn btn-primary btn-sm" id="btn-connect" onclick="connect()">CONNECT</button>
+  <span class="status-badge err" id="conn-status">&#9679; OFFLINE</span>
 
-  <div class="hdr-divider"></div>
+  <div class="hdr-sep"></div>
 
   <div class="hdr-right">
-    <div class="user-tag">
-      <div class="user-avatar" id="user-avatar">?</div>
-      <span id="current-user" style="color:var(--text);font-weight:500">加载中...</span>
+    <div class="user-chip">
+      <div class="user-dot"></div>
+      <span id="current-user" style="letter-spacing:1px">LOADING...</span>
     </div>
     <a href="https://github.com/gongxianga/binance-futures-bot" target="_blank" style="text-decoration:none">
       <button class="btn btn-ghost btn-sm">
-        <svg style="width:12px;height:12px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
+        <svg style="width:11px;height:11px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GITHUB
       </button>
     </a>
-    <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">EXIT</button>
   </div>
 </div>
 
 <!-- Body -->
 <div class="body">
 
-  <!-- Left: account + trade -->
+  <!-- Left panel -->
   <div class="panel-left">
 
+    <!-- Account -->
     <div class="card">
       <div class="card-hdr">
-        <div class="card-dot green"></div> 账户信息
-        <div class="card-hdr-right">
-          <button class="btn btn-ghost btn-sm" onclick="loadAccount()">刷新</button>
+        <div class="hdr-dot green"></div> Account Status
+        <div class="card-hdr-r">
+          <button class="btn btn-ghost btn-sm" onclick="loadAccount()">SYNC</button>
         </div>
       </div>
       <div class="acc-grid">
-        <div class="acc-chip"><label>可用</label><div class="val" id="v-avail">-- USDT</div></div>
-        <div class="acc-chip"><label>余额</label><div class="val neutral" id="v-wallet">-- USDT</div></div>
-        <div class="acc-chip"><label>浮盈</label><div class="val" id="v-pnl">-- USDT</div></div>
+        <div class="acc-chip"><label>Available</label><div class="val" id="v-avail">--</div></div>
+        <div class="acc-chip"><label>Wallet</label><div class="val neutral" id="v-wallet">--</div></div>
+        <div class="acc-chip"><label>Float P&amp;L</label><div class="val" id="v-pnl">--</div></div>
       </div>
     </div>
 
+    <!-- Trade panel -->
     <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
       <div class="card-hdr">
-        <div class="card-dot"></div> 手动交易
+        <div class="hdr-dot"></div> Order Terminal
       </div>
-      <div style="flex:1;overflow-y:auto;padding:14px">
+      <div style="flex:1;overflow-y:auto;padding:12px">
         <div class="form-row">
-          <label>交易对</label>
+          <label>Symbol</label>
           <div class="sym-row">
             <input class="form-inp" id="f-sym" value="BTCUSDT">
-            <button class="btn btn-ghost btn-sm" onclick="getPrice()">报价</button>
+            <button class="btn btn-ghost btn-sm" onclick="getPrice()">QUOTE</button>
           </div>
         </div>
         <div class="cur-price" id="f-cprice">--</div>
         <div class="form-row">
-          <label>订单类型</label>
+          <label>Type</label>
           <select class="form-inp" id="f-otype" onchange="onOtypeChange()">
             <option>MARKET</option><option>LIMIT</option>
           </select>
         </div>
         <div class="form-row">
-          <label>杠杆倍数</label>
+          <label>Leverage</label>
           <input class="form-inp" id="f-lev" value="10" type="number" min="1" max="125">
         </div>
         <div class="form-row">
-          <label>数量</label>
+          <label>Qty</label>
           <input class="form-inp" id="f-qty" value="0.001">
         </div>
         <div class="form-row">
-          <label>限价</label>
-          <input class="form-inp" id="f-lprice" disabled placeholder="仅限价单">
+          <label>Price</label>
+          <input class="form-inp" id="f-lprice" disabled placeholder="LIMIT only">
         </div>
-        <div class="btn-row" style="margin-bottom:10px">
-          <button class="btn btn-long"  onclick="manualOrder('BUY')">做多 &#9650;</button>
-          <button class="btn btn-short" onclick="manualOrder('SELL')">做空 &#9660;</button>
+        <div class="btn-row" style="margin-bottom:9px">
+          <button class="btn btn-long"  onclick="manualOrder('BUY')">&#9650; LONG</button>
+          <button class="btn btn-short" onclick="manualOrder('SELL')">&#9660; SHORT</button>
         </div>
-        <button class="btn btn-warn btn-sm" style="width:100%" onclick="cancelOrders()">撤销当前交易对挂单</button>
+        <button class="btn btn-warn btn-sm" style="width:100%" onclick="cancelOrders()">CANCEL ALL ORDERS</button>
       </div>
     </div>
 
@@ -433,7 +583,7 @@ tr:hover td { background: var(--bg3); }
 
   <div class="resizer-col" id="resizer-left"></div>
 
-  <!-- Main: radar + scanner (top), positions (bottom) -->
+  <!-- Main panel -->
   <div class="panel-main">
 
     <div class="main-top">
@@ -441,14 +591,15 @@ tr:hover td { background: var(--bg3); }
       <!-- Radar -->
       <div class="card radar-card">
         <div class="card-hdr">
-          <div class="card-dot" id="radar-dot"></div> 市场雷达
-          <span style="font-size:10px;color:var(--muted);font-weight:400" id="radar-ts"></span>
-          <div class="card-hdr-right">
-            <button class="btn btn-ghost btn-sm" onclick="loadTickers()">刷新</button>
+          <div class="hdr-dot" id="radar-dot"></div> Market Radar
+          <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:.5px" id="radar-ts"></span>
+          <div class="card-hdr-r">
+            <button class="btn btn-ghost btn-sm" onclick="loadTickers()">SCAN</button>
           </div>
         </div>
         <div class="radar-wrap">
           <div id="radar-chart"></div>
+          <div class="radar-ring"></div>
           <div class="radar-ring"></div>
           <div class="radar-ring"></div>
           <div class="radar-ring"></div>
@@ -461,51 +612,50 @@ tr:hover td { background: var(--bg3); }
       <!-- Scanner -->
       <div class="card scanner-card">
         <div class="card-hdr">
-          <div class="card-dot muted" id="scan-dot"></div>
-          策略扫描
-          <span style="font-size:10px;color:var(--muted);font-weight:400" id="scan-ts"></span>
-          <div class="card-hdr-right">
-            <span class="countdown" id="scan-status">未启动</span>
+          <div class="hdr-dot off" id="scan-dot"></div>
+          Strategy Scanner
+          <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:.5px" id="scan-ts"></span>
+          <div class="card-hdr-r">
+            <span class="countdown" id="scan-status">IDLE</span>
           </div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-          <!-- Settings bar -->
-          <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border);background:var(--bg3)">
+          <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border2);background:rgba(0,240,255,.02)">
             <div class="scan-settings-grid">
               <div class="scan-field">
-                <label>最低信号分</label>
+                <label>Min Score</label>
                 <input class="form-inp" id="s-minscore" value="2" type="number" min="1" max="4">
               </div>
               <div class="scan-field">
-                <label>金额 (USDT)</label>
+                <label>Amount(USDT)</label>
                 <input class="form-inp" id="s-usdt" value="100">
               </div>
               <div class="scan-field">
-                <label>杠杆倍数</label>
+                <label>Leverage</label>
                 <input class="form-inp" id="s-lev" value="10" type="number">
               </div>
               <div class="scan-field">
-                <label>止损 %</label>
+                <label>Stop Loss%</label>
                 <input class="form-inp" id="s-sl" value="2.0">
               </div>
               <div class="scan-field">
-                <label>止盈 %</label>
+                <label>Take Profit%</label>
                 <input class="form-inp" id="s-tp" value="4.0">
               </div>
               <div class="scan-field" style="display:flex;flex-direction:column;justify-content:flex-end">
-                <label>执行模式</label>
+                <label>Execute Mode</label>
                 <select class="form-inp" id="s-mode">
-                  <option value="manual">手动确认</option>
-                  <option value="auto">全自动</option>
+                  <option value="manual">Manual</option>
+                  <option value="auto">Auto</option>
                 </select>
               </div>
             </div>
             <div class="scan-ctrl">
-              <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">&#9654; 开始扫描</button>
-              <button class="btn btn-ghost btn-sm"   id="btn-scan-stop"  onclick="stopScan()" disabled>&#9632; 停止</button>
+              <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">&#9654; START</button>
+              <button class="btn btn-ghost btn-sm"   id="btn-scan-stop"  onclick="stopScan()" disabled>&#9632; STOP</button>
               <div class="progress-wrap" id="scan-progress-wrap" style="display:none">
                 <div class="progress-meta">
-                  <span id="scan-progress-text">扫描中...</span>
+                  <span id="scan-progress-text">Scanning...</span>
                   <span id="scan-progress-pct">0%</span>
                 </div>
                 <div class="progress-bar-bg">
@@ -514,11 +664,10 @@ tr:hover td { background: var(--bg3); }
               </div>
             </div>
           </div>
-          <!-- Results -->
-          <div style="flex:1;overflow-y:auto;padding:12px 14px">
+          <div style="flex:1;overflow-y:auto;padding:10px 12px">
             <div class="empty-state" id="scan-empty">
-              <div class="empty-icon">&#128225;</div>
-              <div>点击「开始扫描」启动策略雷达</div>
+              <span class="empty-icon">&#128225;</span>
+              Press START to activate strategy scanner
             </div>
             <div class="signal-grid" id="scan-signals"></div>
           </div>
@@ -532,19 +681,19 @@ tr:hover td { background: var(--bg3); }
     <!-- Positions -->
     <div class="card positions-card">
       <div class="card-hdr">
-        <div class="card-dot green"></div> 当前持仓
-        <div class="card-hdr-right">
-          <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
+        <div class="hdr-dot green"></div> Open Positions
+        <div class="card-hdr-r">
+          <button class="btn btn-ghost btn-sm" onclick="loadPositions()">REFRESH</button>
         </div>
       </div>
-      <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 40px)">
+      <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 38px)">
         <table>
           <thead><tr>
-            <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
-            <th>标记价</th><th>未实现盈亏</th><th>收益%</th><th>杠杆</th><th>操作</th>
+            <th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th>
+            <th>Mark</th><th>Unrealized PnL</th><th>ROE%</th><th>Lev</th><th>Action</th>
           </tr></thead>
           <tbody id="pos-tbody">
-            <tr><td colspan="9" class="muted" style="padding:20px">暂无持仓</td></tr>
+            <tr><td colspan="9" class="muted" style="padding:18px;letter-spacing:1px">-- NO OPEN POSITIONS --</td></tr>
           </tbody>
         </table>
       </div>
@@ -554,17 +703,17 @@ tr:hover td { background: var(--bg3); }
 
   <div class="resizer-col" id="resizer-right"></div>
 
-  <!-- Right: log -->
+  <!-- Log panel -->
   <div class="panel-right">
     <div class="card log-panel">
       <div class="card-hdr">
-        <div class="card-dot cyan"></div> 操作日志
-        <div class="card-hdr-right">
-          <button class="btn btn-ghost btn-sm" onclick="clearLog()">清除</button>
+        <div class="hdr-dot"></div> System Log
+        <div class="card-hdr-r">
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">CLR</button>
         </div>
       </div>
       <div class="log-box" id="log-box">
-        <div class="log-entry"><span class="ts">[--:--:--]</span><span class="info">系统启动中...</span></div>
+        <div class="log-entry"><span class="ts">[--:--:--]</span><span class="info">SYSTEM INITIALIZING...</span></div>
       </div>
     </div>
   </div>
@@ -596,15 +745,14 @@ window.addEventListener('load', () => {
 async function loadCurrentUser() {
   const r = await fetch('/api/auth/status').then(r => r.json()).catch(() => ({}));
   if (r.authenticated) {
-    document.getElementById('current-user').textContent = r.username;
-    document.getElementById('user-avatar').textContent  = r.username.charAt(0).toUpperCase();
+    document.getElementById('current-user').textContent = r.username.toUpperCase();
   } else {
     window.location.href = '/login';
   }
 }
 
 async function logout() {
-  if (!confirm('确认退出登录？')) return;
+  if (!confirm('Confirm logout?')) return;
   await fetch('/api/auth/logout', { method: 'POST' });
   window.location.href = '/login';
 }
@@ -624,22 +772,22 @@ async function connect() {
   const key    = document.getElementById('inp-key').value.trim();
   const secret = document.getElementById('inp-secret').value.trim();
   const test   = document.getElementById('chk-testnet').checked;
-  if (!key || !secret) { toast('请填写 API Key 和 Secret', 'err'); return; }
+  if (!key || !secret) { toast('API KEY AND SECRET REQUIRED', 'err'); return; }
   const btn = document.getElementById('btn-connect');
-  btn.disabled = true; btn.textContent = '连接中...';
+  btn.disabled = true; btn.textContent = 'CONNECTING...';
   const r = await fetch('/api/connect', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ api_key: key, api_secret: secret, testnet: test })
   }).then(r => r.json());
-  btn.disabled = false; btn.textContent = '连 接';
-  if (r.ok) { setConnected(true); toast('连接成功', 'ok'); autoRefresh(); }
-  else { setConnected(false); toast('连接失败: ' + r.msg, 'err'); }
+  btn.disabled = false; btn.textContent = 'CONNECT';
+  if (r.ok) { setConnected(true); toast('CONNECTION ESTABLISHED', 'ok'); autoRefresh(); }
+  else { setConnected(false); toast('CONNECTION FAILED: ' + r.msg, 'err'); }
 }
 
 function setConnected(ok) {
   const el = document.getElementById('conn-status');
-  el.className  = 'status ' + (ok ? 'ok' : 'err');
-  el.textContent = ok ? '● 已连接' : '● 未连接';
+  el.className   = 'status-badge ' + (ok ? 'ok' : 'err');
+  el.textContent = ok ? '● ONLINE' : '● OFFLINE';
 }
 
 async function autoRefresh() { await loadAccount(); await loadPositions(); }
@@ -647,10 +795,10 @@ async function autoRefresh() { await loadAccount(); await loadPositions(); }
 async function loadAccount() {
   const r = await fetch('/api/account').then(r => r.json()).catch(() => ({}));
   if (!r.ok) return;
-  document.getElementById('v-avail').textContent  = r.available.toFixed(2) + ' USDT';
-  document.getElementById('v-wallet').textContent = r.wallet.toFixed(2) + ' USDT';
+  document.getElementById('v-avail').textContent  = r.available.toFixed(2) + ' U';
+  document.getElementById('v-wallet').textContent = r.wallet.toFixed(2) + ' U';
   const el = document.getElementById('v-pnl');
-  el.textContent = (r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2) + ' USDT';
+  el.textContent = (r.pnl >= 0 ? '+' : '') + r.pnl.toFixed(2) + ' U';
   el.className   = 'val ' + (r.pnl >= 0 ? '' : 'neg');
 }
 
@@ -658,18 +806,18 @@ async function loadPositions() {
   const r = await fetch('/api/positions').then(r => r.json()).catch(() => ({ positions: [] }));
   const tbody = document.getElementById('pos-tbody');
   if (!r.positions.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="muted" style="padding:16px;letter-spacing:1px">-- NO OPEN POSITIONS --</td></tr>';
     return;
   }
   tbody.innerHTML = r.positions.map(p => `
     <tr>
       <td class="accent">${p.symbol}</td>
-      <td class="${p.side === '多' ? 'green' : 'red'}">${p.side === '多' ? '多 ▲' : '空 ▼'}</td>
+      <td class="${p.side === '多' ? 'green' : 'red'}">${p.side === '多' ? 'LONG ▲' : 'SHORT ▼'}</td>
       <td>${p.amt.toFixed(4)}</td><td>${p.entry.toFixed(4)}</td><td>${p.mark.toFixed(4)}</td>
       <td class="${p.pnl >= 0 ? 'green' : 'red'}">${p.pnl >= 0 ? '+' : ''}${p.pnl.toFixed(2)}</td>
       <td class="${p.roe >= 0 ? 'green' : 'red'}">${p.roe >= 0 ? '+' : ''}${p.roe.toFixed(2)}%</td>
-      <td>${p.leverage}x</td>
-      <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
+      <td style="color:var(--yellow)">${p.leverage}x</td>
+      <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">CLOSE</button></td>
     </tr>`).join('');
 }
 
@@ -677,7 +825,7 @@ async function getPrice() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
   const r = await fetch('/api/price/' + sym).then(r => r.json()).catch(() => ({}));
   if (r.ok) document.getElementById('f-cprice').textContent = r.price.toFixed(4);
-  else toast('获取价格失败', 'err');
+  else toast('PRICE UNAVAILABLE: ' + (r.msg || 'CHECK SYMBOL'), 'err');
 }
 
 function onOtypeChange() {
@@ -690,30 +838,30 @@ async function manualOrder(side) {
   const qty   = parseFloat(document.getElementById('f-qty').value);
   const lev   = parseInt(document.getElementById('f-lev').value);
   const lpx   = parseFloat(document.getElementById('f-lprice').value);
-  const cn    = side === 'BUY' ? '做多(买入)' : '做空(卖出)';
-  const extra = otype === 'LIMIT' ? '\n限价: ' + lpx : '';
-  if (!confirm('确认下单？\n交易对: ' + sym + '\n方向: ' + cn + '\n类型: ' + otype + '\n数量: ' + qty + '\n杠杆: ' + lev + 'x' + extra)) return;
+  const cn    = side === 'BUY' ? 'LONG(BUY)' : 'SHORT(SELL)';
+  const extra = otype === 'LIMIT' ? '\nPrice: ' + lpx : '';
+  if (!confirm('CONFIRM ORDER?\nSymbol: ' + sym + '\nSide: ' + cn + '\nType: ' + otype + '\nQty: ' + qty + '\nLev: ' + lev + 'x' + extra)) return;
   const body = { symbol: sym, side, type: otype, qty, leverage: lev };
   if (otype === 'LIMIT') body.price = lpx;
   const r = await fetch('/api/order', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
   }).then(r => r.json());
-  if (r.ok) { toast('下单成功 ' + cn + ' ' + sym, 'ok'); autoRefresh(); }
-  else toast('下单失败: ' + r.msg, 'err');
+  if (r.ok) { toast('ORDER PLACED: ' + cn + ' ' + sym, 'ok'); autoRefresh(); }
+  else toast('ORDER FAILED: ' + r.msg, 'err');
 }
 
 async function closePos(symbol) {
-  if (!confirm('确认平仓 ' + symbol + '？')) return;
+  if (!confirm('CLOSE POSITION: ' + symbol + '?')) return;
   const r = await fetch('/api/close', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol })
   }).then(r => r.json());
-  if (r.ok) { toast('平仓成功: ' + symbol, 'ok'); autoRefresh(); }
-  else toast('平仓失败: ' + r.msg, 'err');
+  if (r.ok) { toast('POSITION CLOSED: ' + symbol, 'ok'); autoRefresh(); }
+  else toast('CLOSE FAILED: ' + r.msg, 'err');
 }
 
 async function cancelOrders() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
-  if (!confirm('撤销 ' + sym + ' 所有挂单？')) return;
+  if (!confirm('CANCEL ALL ORDERS: ' + sym + '?')) return;
   const r = await fetch('/api/cancel', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol: sym })
   }).then(r => r.json());
@@ -738,12 +886,10 @@ function setScanActive(active) {
   const dot   = document.getElementById('scan-dot');
   if (active) {
     sweep.classList.add('active');
-    dot.className = 'card-dot';
-    dot.style.animation = 'pulse-dot 1s ease-in-out infinite';
+    dot.className = 'hdr-dot';
   } else {
     sweep.classList.remove('active');
-    dot.className = 'card-dot muted';
-    dot.style.animation = 'none';
+    dot.className = 'hdr-dot off';
   }
 }
 
@@ -752,14 +898,14 @@ async function startScan() {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(getScanSettings())
   }).then(r => r.json());
-  if (r.ok) { scanRunning = true; setScanActive(true); toast('扫描已启动', 'ok'); }
+  if (r.ok) { scanRunning = true; setScanActive(true); toast('SCANNER ACTIVATED', 'ok'); }
 }
 
 async function stopScan() {
   await fetch('/api/scan/stop', { method: 'POST' });
   scanRunning = false;
   setScanActive(false);
-  document.getElementById('scan-status').textContent = '已停止';
+  document.getElementById('scan-status').textContent = 'IDLE';
 }
 
 async function loadScanStatus() {
@@ -773,13 +919,13 @@ async function loadScanStatus() {
   if (prog.total > 0) {
     const pct = Math.round(prog.current / prog.total * 100);
     wrap.style.display = 'block';
-    document.getElementById('scan-progress-text').textContent = prog.current + '/' + prog.total + ': ' + prog.symbol;
+    document.getElementById('scan-progress-text').textContent = prog.current + '/' + prog.total + ' ' + prog.symbol;
     document.getElementById('scan-progress-pct').textContent  = pct + '%';
     document.getElementById('scan-progress-bar').style.width  = pct + '%';
-    document.getElementById('scan-status').textContent = '扫描中...';
+    document.getElementById('scan-status').textContent = 'SCANNING...';
   } else {
     wrap.style.display = 'none';
-    if (r.running) document.getElementById('scan-status').textContent = '下次: ' + r.countdown;
+    if (r.running) document.getElementById('scan-status').textContent = 'NEXT: ' + r.countdown;
   }
 
   if (r.ts) {
@@ -795,29 +941,27 @@ function renderSignals(results) {
   const empty = document.getElementById('scan-empty');
   const grid  = document.getElementById('scan-signals');
   if (!results.length) {
-    empty.style.display = 'block';
-    grid.innerHTML = '';
-    return;
+    empty.style.display = 'block'; grid.innerHTML = ''; return;
   }
   empty.style.display = 'none';
   grid.innerHTML = results.map(r => {
     const isLong = r.direction === 'LONG';
     const d = r.details;
-    const tagCls = (c) => c === 'green' ? 'up' : c === 'red' ? 'dn' : '';
+    const tc = c => c === 'green' ? 'up' : c === 'red' ? 'dn' : '';
     const tags = [
-      '<span class="sig-tag ' + tagCls(d.vol.cls) + '">量价 ' + (d.vol.text||'') + '</span>',
-      '<span class="sig-tag ' + tagCls(d.rsi.cls) + '">RSI ' + (d.rsi.text||'') + '</span>',
-      '<span class="sig-tag ' + tagCls(d.mom.cls) + '">动量 ' + (d.mom.text||'') + '</span>',
-      '<span class="sig-tag ' + tagCls(d.bb.cls)  + '">BB '  + (d.bb.text ||'') + '</span>',
+      '<span class="sig-tag ' + tc(d.vol.cls) + '">VOL ' + (d.vol.text||'') + '</span>',
+      '<span class="sig-tag ' + tc(d.rsi.cls) + '">RSI ' + (d.rsi.text||'') + '</span>',
+      '<span class="sig-tag ' + tc(d.mom.cls) + '">MOM ' + (d.mom.text||'') + '</span>',
+      '<span class="sig-tag ' + tc(d.bb.cls)  + '">BB '  + (d.bb.text ||'') + '</span>',
     ].join('');
     const safeR = JSON.stringify(r).replace(/"/g, '&quot;');
     return '<div class="signal-card ' + (isLong ? 'long' : 'short') + '">' +
-      '<div class="sig-sym">' + r.symbol.replace('USDT','') + '<span style="color:var(--muted);font-size:10px;font-weight:400">/USDT</span></div>' +
-      '<div class="sig-dir ' + (isLong ? 'long' : 'short') + '">' + (isLong ? '多 ▲' : '空 ▼') + '</div>' +
-      '<div class="sig-stars">' + '★'.repeat(r.score) + '☆'.repeat(4-r.score) + '</div>' +
+      '<div class="sig-sym">' + r.symbol.replace('USDT','') + '<span style="color:var(--muted);font-size:9px">/USDT</span></div>' +
+      '<div class="sig-dir ' + (isLong ? 'long' : 'short') + '">' + (isLong ? '▲ LONG' : '▼ SHORT') + '</div>' +
+      '<div class="sig-stars">' + '★'.repeat(r.score) + '<span style="opacity:.25">' + '★'.repeat(4-r.score) + '</span></div>' +
       '<div class="sig-tags">' + tags + '</div>' +
       '<div class="sig-price">' + r.price.toFixed(4) + '</div>' +
-      '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal(' + safeR + ')">交易</button></div>' +
+      '<div class="sig-trade"><button class="btn btn-primary btn-sm" onclick="tradeSignal(' + safeR + ')">TRADE</button></div>' +
       '</div>';
   }).join('');
 }
@@ -825,26 +969,26 @@ function renderSignals(results) {
 async function tradeSignal(signal) {
   const s    = getScanSettings();
   const side = signal.direction === 'LONG' ? 'BUY' : 'SELL';
-  const cn   = side === 'BUY' ? '做多' : '做空';
-  if (!confirm('交易信号\n交易对: ' + signal.symbol + '\n方向: ' + cn + '\n评分: ' + signal.score + '分\n金额: ' + s.trade_usdt + ' USDT\n杠杆: ' + s.leverage + 'x\n止损: ' + s.sl_pct + '%  止盈: ' + s.tp_pct + '%')) return;
+  const cn   = side === 'BUY' ? 'LONG' : 'SHORT';
+  if (!confirm('EXECUTE SIGNAL?\nSymbol: ' + signal.symbol + '\nSide: ' + cn + '\nScore: ' + signal.score + '\nAmt: ' + s.trade_usdt + ' USDT  Lev: ' + s.leverage + 'x\nSL: ' + s.sl_pct + '%  TP: ' + s.tp_pct + '%')) return;
   const pr  = await fetch('/api/price/' + signal.symbol).then(r => r.json()).catch(() => ({}));
   const qty = Math.round(s.trade_usdt / (pr.price || signal.price) * 1000) / 1000;
   const r   = await fetch('/api/order/sltp', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ symbol: signal.symbol, side, qty, leverage: s.leverage, sl_pct: s.sl_pct, tp_pct: s.tp_pct })
   }).then(r => r.json());
-  if (r.ok) { toast('下单成功 ' + cn + ' ' + signal.symbol + '  SL:' + (r.sl||0).toFixed(4) + '  TP:' + (r.tp||0).toFixed(4), 'ok'); autoRefresh(); }
-  else toast('下单失败: ' + r.msg, 'err');
+  if (r.ok) { toast('ORDER OK: ' + cn + ' ' + signal.symbol + ' SL:' + (r.sl||0).toFixed(4) + ' TP:' + (r.tp||0).toFixed(4), 'ok'); autoRefresh(); }
+  else toast('ORDER FAILED: ' + r.msg, 'err');
 }
 
+// ── Chart ──
 function initChart() {
-  const el = document.getElementById('radar-chart');
-  radarChart = echarts.init(el, null, { renderer: 'canvas' });
+  radarChart = echarts.init(document.getElementById('radar-chart'), null, { renderer: 'canvas' });
   window.addEventListener('resize', () => radarChart.resize());
   radarChart.on('click', params => {
     if (params.data?.value) {
       document.getElementById('f-sym').value = params.data.value[3];
-      toast('已选择: ' + params.data.value[3], 'info');
+      toast('SYMBOL SELECTED: ' + params.data.value[3], 'ok');
     }
   });
 }
@@ -860,79 +1004,78 @@ async function loadTickers() {
 
 function renderChart() {
   if (!radarChart || !tickerData.length) return;
-  const dark  = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const bg    = dark ? '#161b27' : '#ffffff';
-  const grid  = dark ? '#2d3452' : '#e8eaf0';
-  const muted = dark ? '#6b7280' : '#9ca3af';
-  const tip   = dark ? '#c8cce8' : '#4b5563';
-
   const maxVol = Math.max(...tickerData.map(t => t.vol));
+
   const data = tickerData.map(t => {
     const score = signalMap[t.symbol] || 0;
-    const size  = Math.max(7, Math.min(42, t.vol / maxVol * 42));
-    let color;
-    if      (score >= 4) color = '#ef4444';
-    else if (score >= 3) color = '#f59e0b';
-    else if (score >= 2) color = '#6175f7';
+    const size  = Math.max(6, Math.min(40, t.vol / maxVol * 40));
+    let color, shadow;
+    if      (score >= 4) { color = '#ff2d6b'; shadow = 'rgba(255,45,107,.8)'; }
+    else if (score >= 3) { color = '#ffd700'; shadow = 'rgba(255,215,0,.8)'; }
+    else if (score >= 2) { color = '#00f0ff'; shadow = 'rgba(0,240,255,.8)'; }
     else color = t.chg > 0
-      ? 'rgba(16,185,129,' + (0.45 + Math.min(Math.abs(t.chg)/18, .55)) + ')'
-      : 'rgba(239,68,68,'  + (0.35 + Math.min(Math.abs(t.chg)/18, .55)) + ')';
+      ? 'rgba(0,255,136,' + (0.35 + Math.min(Math.abs(t.chg)/18, .6)) + ')'
+      : 'rgba(255,45,107,' + (0.25 + Math.min(Math.abs(t.chg)/18, .6)) + ')';
+    shadow = shadow || 'transparent';
     return {
       value: [t.chg, t.vol, size, t.symbol, score],
       itemStyle: {
         color,
-        borderColor: score >= 2 ? 'rgba(255,255,255,.5)' : 'transparent',
-        borderWidth: score >= 2 ? 1.5 : 0,
-        shadowBlur:  score >= 3 ? 14 : score >= 2 ? 6 : 0,
-        shadowColor: score >= 3 ? '#ef4444' : '#6175f7',
+        borderColor: score >= 2 ? 'rgba(255,255,255,.6)' : 'transparent',
+        borderWidth: score >= 2 ? 1 : 0,
+        shadowBlur:  score >= 2 ? 16 : 0,
+        shadowColor: shadow,
       },
       symbol:     score >= 2 ? 'diamond' : 'circle',
-      symbolSize: score >= 2 ? size * 1.35 : size,
+      symbolSize: score >= 2 ? size * 1.4 : size,
     };
   });
 
-  const labels = tickerData.slice(0, 30).map(t => ({
+  const labels = tickerData.slice(0, 28).map(t => ({
     coord: [t.chg, t.vol],
-    value: (signalMap[t.symbol] >= 2 ? '★ ' : '') + t.symbol.replace('USDT',''),
+    value: (signalMap[t.symbol] >= 2 ? '◆ ' : '') + t.symbol.replace('USDT',''),
     label: {
       show: true, position: 'right', fontSize: 9,
-      color:      signalMap[t.symbol] >= 2 ? '#6175f7' : muted,
+      color:      signalMap[t.symbol] >= 2 ? '#00f0ff' : 'rgba(74,122,155,.8)',
       fontWeight: signalMap[t.symbol] >= 2 ? 'bold'    : 'normal',
+      fontFamily: 'Consolas,monospace',
     }
   }));
 
   radarChart.setOption({
-    backgroundColor: bg,
-    animation: true, animationDuration: 600, animationEasing: 'cubicOut',
-    grid: { left: 52, right: 18, top: 24, bottom: 36 },
+    backgroundColor: '#050a12',
+    animation: true, animationDuration: 500, animationEasing: 'cubicOut',
+    grid: { left: 50, right: 18, top: 22, bottom: 34 },
     xAxis: {
-      type: 'value', name: '24h涨跌%',
-      nameTextStyle: { color: muted, fontSize: 10 },
-      axisLine: { lineStyle: { color: grid } },
-      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
-      axisLabel: { color: muted, fontSize: 10 },
+      type: 'value', name: '24H CHG%',
+      nameTextStyle: { color: 'rgba(74,122,155,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
+      axisLine:  { lineStyle: { color: 'rgba(0,240,255,.12)' } },
+      splitLine: { lineStyle: { color: 'rgba(0,240,255,.06)', type: 'dashed' } },
+      axisLabel: { color: 'rgba(74,122,155,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
     },
     yAxis: {
-      type: 'value', name: '成交额(亿)',
-      nameTextStyle: { color: muted, fontSize: 10 },
-      axisLine: { lineStyle: { color: grid } },
-      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
-      axisLabel: { color: muted, fontSize: 10 },
+      type: 'value', name: 'VOL(亿)',
+      nameTextStyle: { color: 'rgba(74,122,155,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
+      axisLine:  { lineStyle: { color: 'rgba(0,240,255,.12)' } },
+      splitLine: { lineStyle: { color: 'rgba(0,240,255,.06)', type: 'dashed' } },
+      axisLabel: { color: 'rgba(74,122,155,.7)', fontSize: 9, fontFamily: 'Consolas,monospace' },
     },
     tooltip: {
       trigger: 'item',
-      backgroundColor: bg, borderColor: grid,
-      textStyle: { color: tip, fontSize: 12 },
+      backgroundColor: 'rgba(8,15,28,.95)',
+      borderColor: 'rgba(0,240,255,.3)',
+      textStyle: { color: '#cce8ff', fontSize: 11, fontFamily: 'Consolas,monospace' },
       formatter: p => {
         const [chg, vol, , sym, score] = p.data.value;
-        const sc = score > 0 ? '<br><b style="color:#6175f7">信号: ' + '★'.repeat(score) + '</b>' : '';
-        return '<b>' + sym + '</b><br>涨跌: ' + (chg>0?'+':'') + chg.toFixed(2) + '%<br>成交额: ' + vol.toFixed(1) + '亿' + sc;
+        const sc = score > 0 ? '<br><span style="color:#00f0ff">SIGNAL: ' + '★'.repeat(score) + '</span>' : '';
+        return '<b style="color:#00f0ff">' + sym + '</b><br>CHG: ' + (chg>0?'+':'') + chg.toFixed(2) + '%<br>VOL: ' + vol.toFixed(1) + 'B' + sc;
       }
     },
     series: [{ type: 'scatter', data, markPoint: { data: labels, symbol: 'none', animation: false } }],
   }, true);
 }
 
+// ── Log ──
 async function loadLog() {
   const r = await fetch('/api/log').then(r => r.json()).catch(() => ({ log: [] }));
   const box = document.getElementById('log-box');
@@ -942,50 +1085,45 @@ async function loadLog() {
   ).join('');
   box.scrollTop = box.scrollHeight;
 }
-
 function clearLog() { document.getElementById('log-box').innerHTML = ''; }
 
+// ── Toast ──
 let toastTimer;
 function toast(msg, type) {
   const el = document.getElementById('toast');
-  el.textContent    = msg;
-  el.style.display  = 'block';
-  el.style.color    = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--text)';
+  el.textContent   = msg;
+  el.style.display = 'block';
+  el.style.color   = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--cyan)';
+  el.style.borderColor = type === 'ok' ? 'rgba(0,255,136,.3)' : type === 'err' ? 'rgba(255,45,107,.3)' : 'var(--border)';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.style.display = 'none', 3500);
 }
 
+// ── Resizers ──
 function initResizers() {
-  colResize('resizer-left',  '.panel-left',   null,           false);
-  colResize('resizer-right', '.panel-right',  null,           true);
-  colResize('resizer-inner', '.radar-card',   '.scanner-card',false);
+  colResize('resizer-left',  '.panel-left',  false);
+  colResize('resizer-right', '.panel-right', true);
+  colResize('resizer-inner', '.radar-card',  false);
   rowResize('resizer-mid',   '.main-top');
 }
 
-function colResize(id, selA, selB, shrinkA) {
+function colResize(id, sel, shrink) {
   const resizer = document.getElementById(id);
-  if (!resizer) return;
-  const elA = document.querySelector(selA);
-  if (!elA) return;
-
+  const el      = document.querySelector(sel);
+  if (!resizer || !el) return;
   resizer.addEventListener('mousedown', e => {
     e.preventDefault();
-    const startX = e.clientX;
-    const startW = elA.offsetWidth;
+    const startX = e.clientX, startW = el.offsetWidth;
     resizer.classList.add('dragging');
-    document.body.style.cursor     = 'col-resize';
-    document.body.style.userSelect = 'none';
-
+    document.body.style.cssText = 'cursor:col-resize;user-select:none';
     const move = e => {
-      const dx = e.clientX - startX;
-      const w  = Math.max(180, startW + (shrinkA ? -dx : dx));
-      elA.style.width    = w + 'px';
-      elA.style.minWidth = '0';
+      const w = Math.max(180, startW + (shrink ? -(e.clientX - startX) : (e.clientX - startX)));
+      el.style.width = w + 'px'; el.style.minWidth = '0';
       if (radarChart) radarChart.resize();
     };
     const up = () => {
       resizer.classList.remove('dragging');
-      document.body.style.cursor = document.body.style.userSelect = '';
+      document.body.style.cssText = '';
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', up);
       if (radarChart) radarChart.resize();
@@ -995,28 +1133,23 @@ function colResize(id, selA, selB, shrinkA) {
   });
 }
 
-function rowResize(id, topSel) {
+function rowResize(id, sel) {
   const resizer = document.getElementById(id);
-  const topEl   = document.querySelector(topSel);
-  if (!resizer || !topEl) return;
-
+  const el      = document.querySelector(sel);
+  if (!resizer || !el) return;
   resizer.addEventListener('mousedown', e => {
     e.preventDefault();
-    const startY = e.clientY;
-    const startH = topEl.offsetHeight;
+    const startY = e.clientY, startH = el.offsetHeight;
     resizer.classList.add('dragging');
-    document.body.style.cursor     = 'row-resize';
-    document.body.style.userSelect = 'none';
-
+    document.body.style.cssText = 'cursor:row-resize;user-select:none';
     const move = e => {
       const h = Math.max(200, startH + e.clientY - startY);
-      topEl.style.flex   = 'none';
-      topEl.style.height = h + 'px';
+      el.style.flex = 'none'; el.style.height = h + 'px';
       if (radarChart) radarChart.resize();
     };
     const up = () => {
       resizer.classList.remove('dragging');
-      document.body.style.cursor = document.body.style.userSelect = '';
+      document.body.style.cssText = '';
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mouseup', up);
     };
