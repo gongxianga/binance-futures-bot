@@ -128,7 +128,7 @@ class FuturesEngine:
             return None
 
     def get_symbol_filters(self, symbol):
-        """返回 (step_size, is_trading)，从 exchange_info 缓存中读取"""
+        """返回 (step_size, tick_size, is_trading)，从 exchange_info 缓存中读取"""
         if not hasattr(self, "_exinfo_cache"):
             self._exinfo_cache = {}
         if symbol not in self._exinfo_cache:
@@ -136,27 +136,31 @@ class FuturesEngine:
                 info = self.client.futures_exchange_info()
                 for s in info.get("symbols", []):
                     step = "1"
+                    tick = "0.01"
                     for f in s.get("filters", []):
                         if f["filterType"] == "LOT_SIZE":
                             step = f["stepSize"]
+                        elif f["filterType"] == "PRICE_FILTER":
+                            tick = f["tickSize"]
                     self._exinfo_cache[s["symbol"]] = {
                         "step": step,
+                        "tick": tick,
                         "status": s.get("status", "TRADING")
                     }
             except Exception:
-                return "1", True
-        d = self._exinfo_cache.get(symbol, {"step": "1", "status": "TRADING"})
-        return d["step"], d["status"] == "TRADING"
+                return "1", "0.01", True
+        d = self._exinfo_cache.get(symbol, {"step": "1", "tick": "0.01", "status": "TRADING"})
+        return d["step"], d["tick"], d["status"] == "TRADING"
 
-    def round_qty(self, qty, step):
-        """按 stepSize 取整数量，返回格式化字符串避免浮点精度问题"""
+    def _fmt(self, value, size_str):
+        """按 stepSize/tickSize 格式化数值为字符串，避免浮点精度问题"""
         import math
-        step_f = float(step)
-        if step_f <= 0:
-            return str(int(qty))
-        precision = max(0, -int(math.floor(math.log10(step_f))))
-        qty_rounded = math.floor(qty / step_f) * step_f
-        return f"{qty_rounded:.{precision}f}"
+        size_f = float(size_str)
+        if size_f <= 0:
+            return str(int(value))
+        precision = max(0, -int(math.floor(math.log10(size_f))))
+        rounded = math.floor(value / size_f) * size_f
+        return f"{rounded:.{precision}f}"
 
     def _safe_set_leverage(self, symbol, lev):
         """设置杠杆，超出上限时自动降为该合约允许的最大值"""
@@ -173,27 +177,27 @@ class FuturesEngine:
                 add_log(f"{symbol} 杠杆设置失败: {e}", "warn")
 
     def place_order(self, symbol, side, otype, qty, price=None, lev=10):
-        step, is_trading = self.get_symbol_filters(symbol)
+        step, tick, is_trading = self.get_symbol_filters(symbol)
         if not is_trading:
             return False, f"{symbol} 交易对已关闭，无法下单"
-        qty = self.round_qty(float(qty), step)
+        qty = self._fmt(float(qty), step)
         if float(qty) <= 0:
             return False, f"{symbol} 计算数量为0，请增加交易金额"
         try:
             self._safe_set_leverage(symbol, lev)
             p = dict(symbol=symbol, side=side, type=otype, quantity=qty)
             if otype == "LIMIT" and price:
-                p["price"] = price
+                p["price"] = self._fmt(float(price), tick)
                 p["timeInForce"] = "GTC"
             return True, self.client.futures_create_order(**p)
         except Exception as e:
             return False, str(e)
 
     def place_with_sltp(self, symbol, side, qty, lev, sl_pct, tp_pct):
-        step, is_trading = self.get_symbol_filters(symbol)
+        step, tick, is_trading = self.get_symbol_filters(symbol)
         if not is_trading:
             return False, f"{symbol} 交易对已关闭，无法下单", 0, 0
-        qty = self.round_qty(float(qty), step)
+        qty = self._fmt(float(qty), step)
         if float(qty) <= 0:
             return False, f"{symbol} 计算数量为0，请增加交易金额", 0, 0
         try:
@@ -203,18 +207,22 @@ class FuturesEngine:
             price = float(order.get("avgPrice") or 0) or self.get_price(symbol) or 0
             close_side = "SELL" if side == "BUY" else "BUY"
             if side == "BUY":
-                sl_px = round(price * (1 - sl_pct / 100), 6)
-                tp_px = round(price * (1 + tp_pct / 100), 6)
+                sl_px = price * (1 - sl_pct / 100)
+                tp_px = price * (1 + tp_pct / 100)
             else:
-                sl_px = round(price * (1 + sl_pct / 100), 6)
-                tp_px = round(price * (1 - tp_pct / 100), 6)
+                sl_px = price * (1 + sl_pct / 100)
+                tp_px = price * (1 - tp_pct / 100)
+            sl_px_str = self._fmt(sl_px, tick)
+            tp_px_str = self._fmt(tp_px, tick)
+            sl_px = float(sl_px_str)
+            tp_px = float(tp_px_str)
             if price > 0:
                 self.client.futures_create_order(
                     symbol=symbol, side=close_side, type="STOP_MARKET",
-                    stopPrice=sl_px, closePosition=True)
+                    stopPrice=sl_px_str, closePosition=True)
                 self.client.futures_create_order(
                     symbol=symbol, side=close_side, type="TAKE_PROFIT_MARKET",
-                    stopPrice=tp_px, closePosition=True)
+                    stopPrice=tp_px_str, closePosition=True)
             return True, order, sl_px, tp_px
         except Exception as e:
             return False, str(e), 0, 0
