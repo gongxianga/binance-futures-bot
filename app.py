@@ -733,6 +733,7 @@ def api_positions():
     for p in positions:
         amt = float(p["positionAmt"])
         entry = float(p["entryPrice"])
+        mark = float(p["markPrice"])
         pnl = float(p["unRealizedProfit"])
         lev = lev_map.get(p["symbol"]) or int(p.get("leverage") or 0) or 1
 
@@ -741,20 +742,33 @@ def api_positions():
         if isinstance(lev, int) and lev > 0:
             margin = (entry * abs(amt)) / lev
             roe = (pnl / margin * 100) if margin > 0 else 0
+            notional = mark * abs(amt)  # 仓位价值
+            # 计算强平价格（近似）
+            if amt > 0:  # 多仓
+                liq_price = entry * (1 - 0.9 / lev)
+            else:  # 空仓
+                liq_price = entry * (1 + 0.9 / lev)
         else:
             roe = 0
+            margin = 0
+            notional = 0
+            liq_price = 0
             lev = "--"
 
         result.append({
-            "symbol":     p["symbol"],
-            "side":       "多" if amt > 0 else "空",
-            "amt":        abs(amt),
-            "entry":      entry,
-            "mark":       float(p["markPrice"]),
-            "pnl":        pnl,
-            "roe":        roe,
-            "leverage":   lev,
-            "positionAmt": p["positionAmt"],
+            "symbol":       p["symbol"],
+            "side":         "多" if amt > 0 else "空",
+            "amt":          abs(amt),
+            "entry":        entry,
+            "mark":         mark,
+            "pnl":          pnl,
+            "roe":          roe,
+            "leverage":     lev,
+            "positionAmt":  p["positionAmt"],
+            "margin":       margin,
+            "notional":     notional,
+            "liquidation":  liq_price,
+            "updateTime":   p.get("updateTime", 0),
         })
 
     # 添加排序功能

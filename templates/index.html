@@ -276,6 +276,36 @@ select.form-inp { cursor: pointer; }
 
 /* 持仓 */
 .positions-card { flex-shrink: 0; height: 165px; min-height: 80px; overflow: hidden; }
+.pos-expand-btn {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--muted); font-size: 14px; padding: 0 4px;
+  transition: all .15s; line-height: 1;
+}
+.pos-expand-btn:hover { color: var(--blue); }
+.pos-expand-btn.expanded { transform: rotate(90deg); color: var(--blue); }
+.pos-detail-row { display: none; }
+.pos-detail-row.show { display: table-row; }
+.pos-detail-cell {
+  padding: 0 !important; border-bottom: 1px solid var(--border2) !important;
+  background: var(--bg3); animation: slideDown .2s ease;
+}
+@keyframes slideDown { from{opacity:0} to{opacity:1} }
+.pos-detail-content {
+  padding: 12px 16px; display: grid;
+  grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.pos-detail-item {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 8px 10px;
+}
+.pos-detail-item label {
+  display: block; font-size: 9px; color: var(--muted);
+  margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px;
+}
+.pos-detail-item .value {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  font-family: var(--font-mono);
+}
 
 /* 表格 */
 .tbl-wrap { overflow-x: auto; }
@@ -535,6 +565,7 @@ tr:hover td { background: var(--bg3); }
       <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 38px)">
         <table>
           <thead><tr>
+            <th style="width:20px"></th>
             <th>交易对</th><th>方向</th>
             <th style="cursor:pointer" onclick="sortPositions('amt')" title="点击排序">数量 ⇅</th>
             <th style="cursor:pointer" onclick="sortPositions('entry')" title="点击排序">开仓价 ⇅</th>
@@ -544,7 +575,7 @@ tr:hover td { background: var(--bg3); }
             <th>杠杆</th><th>操作</th>
           </tr></thead>
           <tbody id="pos-tbody">
-            <tr><td colspan="9" class="muted" style="padding:18px">暂无持仓</td></tr>
+            <tr><td colspan="10" class="muted" style="padding:18px">暂无持仓</td></tr>
           </tbody>
         </table>
       </div>
@@ -643,9 +674,18 @@ async function loadPositions() {
   const url = `/api/positions?sort=${posSort.by}&order=${posSort.order}`;
   const r = await fetch(url).then(r=>r.json()).catch(()=>({positions:[]}));
   const tbody = document.getElementById('pos-tbody');
-  if (!r.positions.length) { tbody.innerHTML='<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>'; return; }
-  tbody.innerHTML = r.positions.map(p=>`
-    <tr>
+  if (!r.positions.length) { tbody.innerHTML='<tr><td colspan="10" class="muted" style="padding:16px">暂无持仓</td></tr>'; return; }
+
+  tbody.innerHTML = r.positions.map((p,i)=>{
+    const rowId = 'pos-row-'+i;
+    const detailId = 'pos-detail-'+i;
+    const updateTime = p.updateTime ? new Date(p.updateTime).toLocaleString('zh-CN') : '--';
+    const now = Date.now();
+    const holdTime = p.updateTime ? formatDuration(now - p.updateTime) : '--';
+
+    return `
+    <tr id="${rowId}" class="pos-main-row">
+      <td><button class="pos-expand-btn" onclick="togglePosDetail('${detailId}', this)">▶</button></td>
       <td class="accent">${p.symbol}</td>
       <td class="${p.side==='多'?'green':'red'}">${p.side==='多'?'多 ▲':'空 ▼'}</td>
       <td>${p.amt.toFixed(4)}</td><td>${p.entry.toFixed(4)}</td><td>${p.mark.toFixed(4)}</td>
@@ -653,8 +693,67 @@ async function loadPositions() {
       <td class="${p.roe>=0?'green':'red'}">${p.roe>=0?'+':''}${p.roe.toFixed(2)}%</td>
       <td style="color:var(--yellow);font-weight:600">${p.leverage}x</td>
       <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
-    </tr>`).join('');
+    </tr>
+    <tr id="${detailId}" class="pos-detail-row">
+      <td colspan="10" class="pos-detail-cell">
+        <div class="pos-detail-content">
+          <div class="pos-detail-item">
+            <label>保证金</label>
+            <div class="value">${p.margin>0?p.margin.toFixed(2):'--'} U</div>
+          </div>
+          <div class="pos-detail-item">
+            <label>仓位价值</label>
+            <div class="value">${p.notional>0?p.notional.toFixed(2):'--'} U</div>
+          </div>
+          <div class="pos-detail-item">
+            <label>预估强平价</label>
+            <div class="value" style="color:var(--red)">${p.liquidation>0?p.liquidation.toFixed(4):'--'}</div>
+          </div>
+          <div class="pos-detail-item">
+            <label>持仓时长</label>
+            <div class="value">${holdTime}</div>
+          </div>
+          <div class="pos-detail-item">
+            <label>更新时间</label>
+            <div class="value" style="font-size:10px">${updateTime}</div>
+          </div>
+          <div class="pos-detail-item">
+            <label>价格变化</label>
+            <div class="value ${p.mark>p.entry?'green':'red'}">
+              ${((p.mark-p.entry)/p.entry*100).toFixed(2)}%
+            </div>
+          </div>
+          <div class="pos-detail-item">
+            <label>距强平</label>
+            <div class="value">
+              ${p.liquidation>0?Math.abs((p.liquidation-p.mark)/p.mark*100).toFixed(2)+'%':'--'}
+            </div>
+          </div>
+          <div class="pos-detail-item">
+            <label>仓位模式</label>
+            <div class="value">单向持仓</div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
   updateSortHeaders();
+}
+function togglePosDetail(detailId, btn) {
+  const row = document.getElementById(detailId);
+  const isShow = row.classList.contains('show');
+  row.classList.toggle('show');
+  btn.classList.toggle('expanded');
+}
+function formatDuration(ms) {
+  const sec = Math.floor(ms / 1000);
+  const min = Math.floor(sec / 60);
+  const hr = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+  if (day > 0) return day + '天' + (hr % 24) + '时';
+  if (hr > 0) return hr + '时' + (min % 60) + '分';
+  if (min > 0) return min + '分' + (sec % 60) + '秒';
+  return sec + '秒';
 }
 function sortPositions(by) {
   if (posSort.by === by) { posSort.order = posSort.order === 'desc' ? 'asc' : 'desc'; }
