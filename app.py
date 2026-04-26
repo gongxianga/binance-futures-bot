@@ -719,9 +719,20 @@ def api_positions():
     if not state["connected"] or not engine:
         return jsonify({"ok": False, "positions": []})
     positions = engine.get_positions()
+    # 从 account 获取杠杆信息作为补充
+    lev_map = {}
+    try:
+        acc = engine.client.futures_account()
+        for p in acc.get("positions", []):
+            lev = int(p.get("leverage", 0))
+            if lev > 0:
+                lev_map[p["symbol"]] = lev
+    except Exception:
+        pass
     result = []
     for p in positions:
         amt = float(p["positionAmt"])
+        lev = lev_map.get(p["symbol"]) or int(p.get("leverage") or 0) or "--"
         result.append({
             "symbol":     p["symbol"],
             "side":       "多" if amt > 0 else "空",
@@ -730,7 +741,7 @@ def api_positions():
             "mark":       float(p["markPrice"]),
             "pnl":        float(p["unRealizedProfit"]),
             "roe":        float(p.get("percentage", 0)),
-            "leverage":   p.get("leverage", "--"),
+            "leverage":   lev,
             "positionAmt": p["positionAmt"],
         })
     return jsonify({"ok": True, "positions": result})
@@ -896,7 +907,7 @@ def api_scan_start():
                 # 全自动交易
                 if settings.get("auto_trade") and qualified and state["connected"] and engine:
                     for r in qualified[:3]:
-                        _, is_trading = engine.get_symbol_filters(r["symbol"])
+                        _, _, is_trading = engine.get_symbol_filters(r["symbol"])
                         if not is_trading:
                             add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
                             continue
