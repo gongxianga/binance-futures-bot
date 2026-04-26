@@ -888,12 +888,16 @@ def api_scan_start():
                 # 全自动交易
                 if settings.get("auto_trade") and qualified and state["connected"] and engine:
                     for r in qualified[:3]:
+                        _, is_trading = engine.get_symbol_filters(r["symbol"])
+                        if not is_trading:
+                            add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
+                            continue
                         side = "BUY" if r["direction"] == "LONG" else "SELL"
                         usdt = float(settings.get("trade_usdt", 100))
                         lev  = int(settings.get("leverage", 10))
                         sl   = float(settings.get("sl_pct", 2.0))
                         tp   = float(settings.get("tp_pct", 4.0))
-                        qty  = round(usdt / r["price"], 3)
+                        qty  = usdt / r["price"]
                         ok, res, sl_px, tp_px = engine.place_with_sltp(
                             r["symbol"], side, qty, lev, sl, tp)
                         cn = "做多" if side == "BUY" else "做空"
