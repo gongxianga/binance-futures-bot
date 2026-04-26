@@ -127,6 +127,37 @@ class FuturesEngine:
         except Exception:
             return None
 
+    def get_symbol_filters(self, symbol):
+        """返回 (step_size, is_trading)，从 exchange_info 缓存中读取"""
+        if not hasattr(self, "_exinfo_cache"):
+            self._exinfo_cache = {}
+        if symbol not in self._exinfo_cache:
+            try:
+                info = self.client.futures_exchange_info()
+                for s in info.get("symbols", []):
+                    step = "1"
+                    for f in s.get("filters", []):
+                        if f["filterType"] == "LOT_SIZE":
+                            step = f["stepSize"]
+                    self._exinfo_cache[s["symbol"]] = {
+                        "step": step,
+                        "status": s.get("status", "TRADING")
+                    }
+            except Exception:
+                return "1", True
+        d = self._exinfo_cache.get(symbol, {"step": "1", "status": "TRADING"})
+        return d["step"], d["status"] == "TRADING"
+
+    def round_qty(self, qty, step):
+        """按 stepSize 取整数量，返回格式化字符串避免浮点精度问题"""
+        import math
+        step_f = float(step)
+        if step_f <= 0:
+            return str(int(qty))
+        precision = max(0, -int(math.floor(math.log10(step_f))))
+        qty_rounded = math.floor(qty / step_f) * step_f
+        return f"{qty_rounded:.{precision}f}"
+
     def _safe_set_leverage(self, symbol, lev):
         """设置杠杆，超出上限时自动降为该合约允许的最大值"""
         try:
@@ -142,6 +173,12 @@ class FuturesEngine:
                 add_log(f"{symbol} 杠杆设置失败: {e}", "warn")
 
     def place_order(self, symbol, side, otype, qty, price=None, lev=10):
+        step, is_trading = self.get_symbol_filters(symbol)
+        if not is_trading:
+            return False, f"{symbol} 交易对已关闭，无法下单"
+        qty = self.round_qty(float(qty), step)
+        if float(qty) <= 0:
+            return False, f"{symbol} 计算数量为0，请增加交易金额"
         try:
             self._safe_set_leverage(symbol, lev)
             p = dict(symbol=symbol, side=side, type=otype, quantity=qty)
@@ -153,6 +190,12 @@ class FuturesEngine:
             return False, str(e)
 
     def place_with_sltp(self, symbol, side, qty, lev, sl_pct, tp_pct):
+        step, is_trading = self.get_symbol_filters(symbol)
+        if not is_trading:
+            return False, f"{symbol} 交易对已关闭，无法下单", 0, 0
+        qty = self.round_qty(float(qty), step)
+        if float(qty) <= 0:
+            return False, f"{symbol} 计算数量为0，请增加交易金额", 0, 0
         try:
             self._safe_set_leverage(symbol, lev)
             order = self.client.futures_create_order(
