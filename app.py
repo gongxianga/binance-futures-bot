@@ -906,7 +906,11 @@ def api_scan_start():
 
                 # 全自动交易
                 if settings.get("auto_trade") and qualified and state["connected"] and engine:
+                    open_syms = {p["symbol"] for p in engine.get_positions()}
                     for r in qualified[:3]:
+                        if r["symbol"] in open_syms:
+                            add_log(f"[自动] 跳过 {r['symbol']}：已有持仓", "warn")
+                            continue
                         _, _, is_trading = engine.get_symbol_filters(r["symbol"])
                         if not is_trading:
                             add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
