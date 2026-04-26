@@ -732,18 +732,39 @@ def api_positions():
     result = []
     for p in positions:
         amt = float(p["positionAmt"])
-        lev = lev_map.get(p["symbol"]) or int(p.get("leverage") or 0) or "--"
+        entry = float(p["entryPrice"])
+        pnl = float(p["unRealizedProfit"])
+        lev = lev_map.get(p["symbol"]) or int(p.get("leverage") or 0) or 1
+
+        # 正确计算收益率: ROE = (未实现盈亏 / 保证金) * 100
+        # 保证金 = 入场价 * 数量 / 杠杆
+        if isinstance(lev, int) and lev > 0:
+            margin = (entry * abs(amt)) / lev
+            roe = (pnl / margin * 100) if margin > 0 else 0
+        else:
+            roe = 0
+            lev = "--"
+
         result.append({
             "symbol":     p["symbol"],
             "side":       "多" if amt > 0 else "空",
             "amt":        abs(amt),
-            "entry":      float(p["entryPrice"]),
+            "entry":      entry,
             "mark":       float(p["markPrice"]),
-            "pnl":        float(p["unRealizedProfit"]),
-            "roe":        float(p.get("percentage", 0)),
+            "pnl":        pnl,
+            "roe":        roe,
             "leverage":   lev,
             "positionAmt": p["positionAmt"],
         })
+
+    # 添加排序功能
+    sort_by = request.args.get("sort", "pnl")  # 默认按盈亏排序
+    sort_order = request.args.get("order", "desc")  # desc 或 asc
+
+    if sort_by in ["pnl", "roe", "amt", "entry"]:
+        reverse = (sort_order == "desc")
+        result.sort(key=lambda x: x.get(sort_by, 0), reverse=reverse)
+
     return jsonify({"ok": True, "positions": result})
 
 

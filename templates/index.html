@@ -286,6 +286,7 @@ th {
   white-space: nowrap; border-bottom: 1px solid var(--border2);
   font-size: 10px;
 }
+th[onclick]:hover { background: var(--bg4); color: var(--text); }
 td { padding: 7px 8px; text-align: center; border-bottom: 1px solid var(--border2); white-space: nowrap; color: var(--text); }
 tr:hover td { background: var(--bg3); }
 .green  { color: var(--green) !important; font-weight: 600; }
@@ -534,8 +535,13 @@ tr:hover td { background: var(--bg3); }
       <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 38px)">
         <table>
           <thead><tr>
-            <th>交易对</th><th>方向</th><th>数量</th><th>开仓价</th>
-            <th>标记价</th><th>未实现盈亏</th><th>收益率%</th><th>杠杆</th><th>操作</th>
+            <th>交易对</th><th>方向</th>
+            <th style="cursor:pointer" onclick="sortPositions('amt')" title="点击排序">数量 ⇅</th>
+            <th style="cursor:pointer" onclick="sortPositions('entry')" title="点击排序">开仓价 ⇅</th>
+            <th>标记价</th>
+            <th style="cursor:pointer" onclick="sortPositions('pnl')" title="点击排序">未实现盈亏 ⇅</th>
+            <th style="cursor:pointer" onclick="sortPositions('roe')" title="点击排序">收益率% ⇅</th>
+            <th>杠杆</th><th>操作</th>
           </tr></thead>
           <tbody id="pos-tbody">
             <tr><td colspan="9" class="muted" style="padding:18px">暂无持仓</td></tr>
@@ -572,6 +578,7 @@ let radarChart  = null;
 let tickerData  = [];
 let signalMap   = {};
 let scanRunning = false;
+let posSort     = { by: 'pnl', order: 'desc' };
 
 window.addEventListener('load', () => {
   loadCurrentUser(); initChart(); loadTickers(); loadStatus();
@@ -633,7 +640,8 @@ async function loadAccount() {
   el.className = 'val '+(r.pnl>=0?'':'neg');
 }
 async function loadPositions() {
-  const r = await fetch('/api/positions').then(r=>r.json()).catch(()=>({positions:[]}));
+  const url = `/api/positions?sort=${posSort.by}&order=${posSort.order}`;
+  const r = await fetch(url).then(r=>r.json()).catch(()=>({positions:[]}));
   const tbody = document.getElementById('pos-tbody');
   if (!r.positions.length) { tbody.innerHTML='<tr><td colspan="9" class="muted" style="padding:16px">暂无持仓</td></tr>'; return; }
   tbody.innerHTML = r.positions.map(p=>`
@@ -646,6 +654,27 @@ async function loadPositions() {
       <td style="color:var(--yellow);font-weight:600">${p.leverage}x</td>
       <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
     </tr>`).join('');
+  updateSortHeaders();
+}
+function sortPositions(by) {
+  if (posSort.by === by) { posSort.order = posSort.order === 'desc' ? 'asc' : 'desc'; }
+  else { posSort.by = by; posSort.order = 'desc'; }
+  loadPositions();
+}
+function updateSortHeaders() {
+  const headers = document.querySelectorAll('th[onclick]');
+  headers.forEach(h => {
+    const field = h.getAttribute('onclick').match(/sortPositions\('(\w+)'\)/)?.[1];
+    if (!field) return;
+    const label = h.textContent.replace(/ [↑↓⇅]/g, '').trim();
+    if (field === posSort.by) {
+      h.innerHTML = label + (posSort.order === 'desc' ? ' ↓' : ' ↑');
+      h.style.color = 'var(--blue)';
+    } else {
+      h.innerHTML = label + ' ⇅';
+      h.style.color = 'var(--muted)';
+    }
+  });
 }
 async function getPrice() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
