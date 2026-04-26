@@ -275,7 +275,7 @@ select.form-inp { cursor: pointer; }
 .empty-icon  { font-size: 28px; margin-bottom: 8px; opacity: .5; display: block; }
 
 /* 持仓 */
-.positions-card { flex-shrink: 0; height: 165px; overflow: hidden; }
+.positions-card { flex-shrink: 0; height: 165px; min-height: 80px; overflow: hidden; }
 
 /* 表格 */
 .tbl-wrap { overflow-x: auto; }
@@ -899,7 +899,7 @@ function initResizers() {
   colResize('resizer-left', '.panel-left',  false);
   colResize('resizer-right','.panel-right', true);
   colResize('resizer-inner','.radar-card',  false);
-  rowResize('resizer-mid',  '.main-top');
+  rowResize('resizer-mid',  '.positions-card', true);
 }
 function colResize(id,sel,shrink) {
   const resizer=document.getElementById(id), el=document.querySelector(sel);
@@ -914,7 +914,8 @@ function colResize(id,sel,shrink) {
     document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
   });
 }
-function rowResize(id,sel) {
+// invert=true: 向上拖增大高度（用于底部面板）
+function rowResize(id,sel,invert) {
   const resizer=document.getElementById(id), el=document.querySelector(sel);
   if (!resizer||!el) return;
   resizer.addEventListener('mousedown',e=>{
@@ -922,8 +923,13 @@ function rowResize(id,sel) {
     const startY=e.clientY, startH=el.offsetHeight;
     resizer.classList.add('dragging');
     document.body.style.cssText='cursor:row-resize;user-select:none';
-    const move=e=>{const h=Math.max(200,startH+e.clientY-startY);el.style.flex='none';el.style.height=h+'px';if(radarChart)radarChart.resize();};
-    const up=()=>{resizer.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);};
+    const move=e=>{
+      const delta = e.clientY - startY;
+      const h = Math.max(80, startH + (invert ? -delta : delta));
+      el.style.height=h+'px';
+      if(radarChart)radarChart.resize();
+    };
+    const up=()=>{resizer.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);if(radarChart)radarChart.resize();};
     document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
   });
 }
