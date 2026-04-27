@@ -559,12 +559,14 @@ tr:hover td { background: var(--bg3); }
       <div class="card-hdr">
         <div class="hdr-dot green"></div> 当前持仓
         <div class="card-hdr-r">
+          <button class="btn btn-warn btn-sm" onclick="batchClosePositions()" id="btn-batch-close" style="display:none;margin-right:6px">平仓选中</button>
           <button class="btn btn-ghost btn-sm" onclick="loadPositions()">刷新</button>
         </div>
       </div>
       <div class="tbl-wrap" style="overflow-y:auto;height:calc(100% - 38px)">
         <table>
           <thead><tr>
+            <th style="width:20px"><input type="checkbox" id="pos-check-all" onchange="toggleAllPositions(this.checked)"></th>
             <th style="width:20px"></th>
             <th>交易对</th><th>方向</th>
             <th style="cursor:pointer" onclick="sortPositions('amt')" title="点击排序">数量 ⇅</th>
@@ -575,7 +577,7 @@ tr:hover td { background: var(--bg3); }
             <th>杠杆</th><th>操作</th>
           </tr></thead>
           <tbody id="pos-tbody">
-            <tr><td colspan="10" class="muted" style="padding:18px">暂无持仓</td></tr>
+            <tr><td colspan="11" class="muted" style="padding:18px">暂无持仓</td></tr>
           </tbody>
         </table>
       </div>
@@ -675,7 +677,12 @@ async function loadPositions() {
   const url = `/api/positions?sort=${posSort.by}&order=${posSort.order}`;
   const r = await fetch(url).then(r=>r.json()).catch(()=>({positions:[]}));
   const tbody = document.getElementById('pos-tbody');
-  if (!r.positions.length) { tbody.innerHTML='<tr><td colspan="10" class="muted" style="padding:16px">暂无持仓</td></tr>'; return; }
+  if (!r.positions.length) {
+    tbody.innerHTML='<tr><td colspan="11" class="muted" style="padding:16px">暂无持仓</td></tr>';
+    document.getElementById('btn-batch-close').style.display = 'none';
+    document.getElementById('pos-check-all').checked = false;
+    return;
+  }
 
   tbody.innerHTML = r.positions.map((p,i)=>{
     const rowId = 'pos-row-'+i;
@@ -687,6 +694,7 @@ async function loadPositions() {
 
     return `
     <tr id="${rowId}" class="pos-main-row">
+      <td><input type="checkbox" class="pos-checkbox" data-symbol="${p.symbol}" data-amt="${p.positionAmt}" onchange="updateBatchCloseBtn()"></td>
       <td><button class="pos-expand-btn ${isExpanded?'expanded':''}" onclick="togglePosDetail('${p.symbol}', '${detailId}', this)">▶</button></td>
       <td class="accent">${p.symbol}</td>
       <td class="${p.side==='多'?'green':'red'}">${p.side==='多'?'多 ▲':'空 ▼'}</td>
@@ -697,7 +705,7 @@ async function loadPositions() {
       <td><button class="btn btn-short btn-sm" onclick="closePos('${p.symbol}')">平仓</button></td>
     </tr>
     <tr id="${detailId}" class="pos-detail-row ${isExpanded?'show':''}">
-      <td colspan="10" class="pos-detail-cell">
+      <td colspan="11" class="pos-detail-cell">
         <div class="pos-detail-content">
           <div class="pos-detail-item">
             <label>保证金</label>
@@ -814,6 +822,80 @@ async function closePos(symbol) {
   if (r.ok) { toast('平仓成功: '+symbol, 'ok'); autoRefresh(); }
   else toast('平仓失败: '+r.msg, 'err');
 }
+
+function toggleAllPositions(checked) {
+  const checkboxes = document.querySelectorAll('.pos-checkbox');
+  checkboxes.forEach(cb => cb.checked = checked);
+  updateBatchCloseBtn();
+}
+
+function updateBatchCloseBtn() {
+  const checkboxes = document.querySelectorAll('.pos-checkbox:checked');
+  const btn = document.getElementById('btn-batch-close');
+  const checkAll = document.getElementById('pos-check-all');
+
+  if (checkboxes.length > 0) {
+    btn.style.display = 'inline-block';
+    btn.textContent = `平仓选中 (${checkboxes.length})`;
+  } else {
+    btn.style.display = 'none';
+  }
+
+  // 更新全选框状态
+  const allCheckboxes = document.querySelectorAll('.pos-checkbox');
+  if (allCheckboxes.length > 0) {
+    checkAll.checked = checkboxes.length === allCheckboxes.length;
+  }
+}
+
+async function batchClosePositions() {
+  const checkboxes = document.querySelectorAll('.pos-checkbox:checked');
+  if (checkboxes.length === 0) {
+    toast('请先选择要平仓的持仓', 'warn');
+    return;
+  }
+
+  const positions = Array.from(checkboxes).map(cb => ({
+    symbol: cb.dataset.symbol,
+    amt: cb.dataset.amt
+  }));
+
+  const symbols = positions.map(p => p.symbol).join(', ');
+  if (!confirm(`确认平仓以下 ${positions.length} 个持仓？\n${symbols}`)) return;
+
+  // 显示处理中状态
+  const btn = document.getElementById('btn-batch-close');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '平仓中...';
+
+  const r = await fetch('/api/batch_close', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({positions})
+  }).then(r => r.json()).catch(e => ({ok: false, msg: '请求失败'}));
+
+  btn.disabled = false;
+  btn.textContent = originalText;
+
+  if (r.ok) {
+    const success = r.results.filter(x => x.ok).length;
+    const failed = r.results.filter(x => !x.ok).length;
+    let msg = `批量平仓完成：成功 ${success} 个`;
+    if (failed > 0) msg += `，失败 ${failed} 个`;
+    toast(msg, failed > 0 ? 'warn' : 'ok');
+
+    // 显示失败详情
+    r.results.filter(x => !x.ok).forEach(x => {
+      toast(`${x.symbol} 失败: ${x.msg}`, 'err');
+    });
+
+    autoRefresh();
+  } else {
+    toast('批量平仓失败: ' + r.msg, 'err');
+  }
+}
+
 async function cancelOrders() {
   const sym = document.getElementById('f-sym').value.trim().toUpperCase();
   if (!confirm('撤销 '+sym+' 所有挂单？')) return;

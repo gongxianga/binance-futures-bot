@@ -873,6 +873,51 @@ def api_close():
     return jsonify({"ok": ok, "msg": "" if ok else str(res)})
 
 
+@app.route("/api/batch_close", methods=["POST"])
+@login_required
+def api_batch_close():
+    """批量平仓"""
+    if not state["connected"] or not engine:
+        return jsonify({"ok": False, "msg": "未连接"})
+
+    data = request.json
+    positions = data.get("positions", [])
+
+    if not positions:
+        return jsonify({"ok": False, "msg": "未选择持仓"})
+
+    results = []
+    success_count = 0
+
+    for pos in positions:
+        symbol = pos.get("symbol")
+        amt = pos.get("amt")
+
+        if not symbol or not amt:
+            results.append({"symbol": symbol or "未知", "ok": False, "msg": "参数错误"})
+            continue
+
+        try:
+            ok, res = engine.close_position(symbol, amt)
+            if ok:
+                success_count += 1
+                add_log(f"[批量平仓] {symbol} 成功", "ok")
+                results.append({"symbol": symbol, "ok": True, "msg": ""})
+            else:
+                add_log(f"[批量平仓] {symbol} 失败: {res}", "err")
+                results.append({"symbol": symbol, "ok": False, "msg": str(res)})
+        except Exception as e:
+            add_log(f"[批量平仓] {symbol} 异常: {str(e)}", "err")
+            results.append({"symbol": symbol, "ok": False, "msg": str(e)})
+
+    return jsonify({
+        "ok": True,
+        "results": results,
+        "success": success_count,
+        "total": len(positions)
+    })
+
+
 @app.route("/api/cancel", methods=["POST"])
 @login_required
 def api_cancel():
