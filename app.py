@@ -996,29 +996,39 @@ def api_scan_start():
                 add_log(f"第{cycle}轮完成: 扫描{min(300,len(tickers))}个，找到 {len(qualified)} 个 ≥{min_score}分 信号", "ok")
 
                 # 全自动交易
-                if settings.get("auto_trade") and qualified and state["connected"] and engine:
-                    open_syms = {p["symbol"] for p in engine.get_positions()}
-                    for r in qualified[:3]:
-                        if r["symbol"] in open_syms:
-                            add_log(f"[自动] 跳过 {r['symbol']}：已有持仓", "warn")
-                            continue
-                        _, _, _, is_trading = engine.get_symbol_filters(r["symbol"])
-                        if not is_trading:
-                            add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
-                            continue
-                        side = "BUY" if r["direction"] == "LONG" else "SELL"
-                        usdt = float(settings.get("trade_usdt", 100))
-                        lev  = int(settings.get("leverage", 10))
-                        sl   = float(settings.get("sl_pct", 2.0))
-                        tp   = float(settings.get("tp_pct", 4.0))
-                        qty  = (usdt * lev) / r["price"]
-                        ok, res, sl_px, tp_px = engine.place_with_sltp(
-                            r["symbol"], side, qty, lev, sl, tp)
-                        cn = "做多" if side == "BUY" else "做空"
-                        if ok:
-                            add_log(f"[自动] {cn} {r['symbol']} 评分:{r['score']} 止损:{sl_px:.4f} 止盈:{tp_px:.4f}", "ok")
-                        else:
-                            add_log(f"[自动] 下单失败 {r['symbol']}: {res}", "err")
+                if settings.get("auto_trade"):
+                    if not state["connected"] or not engine:
+                        add_log("[自动] 未连接交易所，无法自动交易", "warn")
+                    elif not qualified:
+                        add_log("[自动] 本轮无符合条件的信号", "info")
+                    else:
+                        add_log(f"[自动] 开始处理 {len(qualified)} 个信号（取前3个）", "info")
+                        open_syms = {p["symbol"] for p in engine.get_positions()}
+                        traded_count = 0
+                        for r in qualified[:3]:
+                            if r["symbol"] in open_syms:
+                                add_log(f"[自动] 跳过 {r['symbol']}：已有持仓", "warn")
+                                continue
+                            _, _, _, is_trading = engine.get_symbol_filters(r["symbol"])
+                            if not is_trading:
+                                add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
+                                continue
+                            side = "BUY" if r["direction"] == "LONG" else "SELL"
+                            usdt = float(settings.get("trade_usdt", 100))
+                            lev  = int(settings.get("leverage", 10))
+                            sl   = float(settings.get("sl_pct", 2.0))
+                            tp   = float(settings.get("tp_pct", 4.0))
+                            qty  = (usdt * lev) / r["price"]
+                            ok, res, sl_px, tp_px = engine.place_with_sltp(
+                                r["symbol"], side, qty, lev, sl, tp)
+                            cn = "做多" if side == "BUY" else "做空"
+                            if ok:
+                                traded_count += 1
+                                add_log(f"[自动] {cn} {r['symbol']} 评分:{r['score']} 止损:{sl_px:.4f} 止盈:{tp_px:.4f}", "ok")
+                            else:
+                                add_log(f"[自动] 下单失败 {r['symbol']}: {res}", "err")
+                        if traded_count == 0 and len([r for r in qualified[:3] if r["symbol"] not in open_syms]) == 0:
+                            add_log("[自动] 前3个信号都已有持仓，跳过", "info")
             elif not tickers:
                 add_log("获取行情失败，5秒后重试...", "warn")
                 time.sleep(5)
