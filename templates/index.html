@@ -618,7 +618,7 @@ window.addEventListener('load', () => {
   loadCurrentUser(); initChart(); loadTickers(); loadStatus();
   loadLog(); loadSavedConfig();
   setInterval(autoRefresh,    5000);
-  setInterval(loadLog,        3000);
+  // setInterval(loadLog,        3000);  // 已关闭日志自动刷新
   setInterval(loadScanStatus, 1000);
   setInterval(loadTickers,   60000);
   initResizers();
