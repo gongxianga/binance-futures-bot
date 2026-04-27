@@ -128,7 +128,7 @@ class FuturesEngine:
             return None
 
     def get_symbol_filters(self, symbol):
-        """返回 (step_size, tick_size, is_trading)，从 exchange_info 缓存中读取"""
+        """返回 (step_size, tick_size, max_qty, is_trading)，从 exchange_info 缓存中读取"""
         if not hasattr(self, "_exinfo_cache"):
             self._exinfo_cache = {}
         if symbol not in self._exinfo_cache:
@@ -137,20 +137,23 @@ class FuturesEngine:
                 for s in info.get("symbols", []):
                     step = "1"
                     tick = "0.01"
+                    max_qty = "1000000"  # 默认大值
                     for f in s.get("filters", []):
                         if f["filterType"] == "LOT_SIZE":
                             step = f["stepSize"]
+                            max_qty = f.get("maxQty", "1000000")
                         elif f["filterType"] == "PRICE_FILTER":
                             tick = f["tickSize"]
                     self._exinfo_cache[s["symbol"]] = {
                         "step": step,
                         "tick": tick,
+                        "max_qty": max_qty,
                         "status": s.get("status", "TRADING")
                     }
             except Exception:
-                return "1", "0.01", True
-        d = self._exinfo_cache.get(symbol, {"step": "1", "tick": "0.01", "status": "TRADING"})
-        return d["step"], d["tick"], d["status"] == "TRADING"
+                return "1", "0.01", "1000000", True
+        d = self._exinfo_cache.get(symbol, {"step": "1", "tick": "0.01", "max_qty": "1000000", "status": "TRADING"})
+        return d["step"], d["tick"], d["max_qty"], d["status"] == "TRADING"
 
     def _fmt(self, value, size_str):
         """按 stepSize/tickSize 格式化数值为字符串，避免浮点精度问题"""
@@ -177,10 +180,14 @@ class FuturesEngine:
                 add_log(f"{symbol} 杠杆设置失败: {e}", "warn")
 
     def place_order(self, symbol, side, otype, qty, price=None, lev=10):
-        step, tick, is_trading = self.get_symbol_filters(symbol)
+        step, tick, max_qty, is_trading = self.get_symbol_filters(symbol)
         if not is_trading:
             return False, f"{symbol} 交易对已关闭，无法下单"
         qty = self._fmt(float(qty), step)
+        # 检查是否超过最大数量
+        if float(qty) > float(max_qty):
+            qty = self._fmt(float(max_qty) * 0.99, step)  # 使用最大值的99%
+            add_log(f"{symbol} 数量超限，已调整为 {qty}", "warn")
         if float(qty) <= 0:
             return False, f"{symbol} 计算数量为0，请增加交易金额"
         try:
@@ -194,10 +201,14 @@ class FuturesEngine:
             return False, str(e)
 
     def place_with_sltp(self, symbol, side, qty, lev, sl_pct, tp_pct):
-        step, tick, is_trading = self.get_symbol_filters(symbol)
+        step, tick, max_qty, is_trading = self.get_symbol_filters(symbol)
         if not is_trading:
             return False, f"{symbol} 交易对已关闭，无法下单", 0, 0
         qty = self._fmt(float(qty), step)
+        # 检查是否超过最大数量
+        if float(qty) > float(max_qty):
+            qty = self._fmt(float(max_qty) * 0.99, step)  # 使用最大值的99%
+            add_log(f"{symbol} 数量超限，已调整为 {qty}", "warn")
         if float(qty) <= 0:
             return False, f"{symbol} 计算数量为0，请增加交易金额", 0, 0
         try:
@@ -991,7 +1002,7 @@ def api_scan_start():
                         if r["symbol"] in open_syms:
                             add_log(f"[自动] 跳过 {r['symbol']}：已有持仓", "warn")
                             continue
-                        _, _, is_trading = engine.get_symbol_filters(r["symbol"])
+                        _, _, _, is_trading = engine.get_symbol_filters(r["symbol"])
                         if not is_trading:
                             add_log(f"[自动] 跳过 {r['symbol']}：交易对已关闭", "warn")
                             continue
