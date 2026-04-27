@@ -674,6 +674,12 @@ async function loadAccount() {
   el.className = 'val '+(r.pnl>=0?'':'neg');
 }
 async function loadPositions() {
+  // 保存当前勾选状态
+  const checkedSymbols = new Set();
+  document.querySelectorAll('.pos-checkbox:checked').forEach(cb => {
+    checkedSymbols.add(cb.dataset.symbol);
+  });
+
   const url = `/api/positions?sort=${posSort.by}&order=${posSort.order}`;
   const r = await fetch(url).then(r=>r.json()).catch(()=>({positions:[]}));
   const tbody = document.getElementById('pos-tbody');
@@ -692,9 +698,10 @@ async function loadPositions() {
     const holdTime = p.updateTime ? formatDuration(now - p.updateTime) : '--';
     const isExpanded = expandedPos.has(p.symbol);
 
+    const isChecked = checkedSymbols.has(p.symbol);
     return `
     <tr id="${rowId}" class="pos-main-row">
-      <td><input type="checkbox" class="pos-checkbox" data-symbol="${p.symbol}" data-amt="${p.positionAmt}" onchange="updateBatchCloseBtn()"></td>
+      <td><input type="checkbox" class="pos-checkbox" data-symbol="${p.symbol}" data-amt="${p.positionAmt}" onchange="updateBatchCloseBtn()" ${isChecked?'checked':''}></td>
       <td><button class="pos-expand-btn ${isExpanded?'expanded':''}" onclick="togglePosDetail('${p.symbol}', '${detailId}', this)">▶</button></td>
       <td class="accent">${p.symbol}</td>
       <td class="${p.side==='多'?'green':'red'}">${p.side==='多'?'多 ▲':'空 ▼'}</td>
@@ -748,6 +755,9 @@ async function loadPositions() {
     </tr>`;
   }).join('');
   updateSortHeaders();
+
+  // 恢复勾选状态后更新按钮
+  updateBatchCloseBtn();
 }
 function togglePosDetail(symbol, detailId, btn) {
   const row = document.getElementById(detailId);
