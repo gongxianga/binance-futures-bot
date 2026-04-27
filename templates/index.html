@@ -1035,7 +1035,7 @@ async function tradeSignal(signal) {
   const cn=side==='BUY'?'做多':'做空';
   if (!confirm('确认交易？\n交易对: '+signal.symbol+'\n方向: '+cn+'\n评分: '+signal.score+'分\n金额: '+s.trade_usdt+' U  杠杆: '+s.leverage+'x\n止损: '+s.sl_pct+'%  止盈: '+s.tp_pct+'%')) return;
   const pr=await fetch('/api/price/'+signal.symbol).then(r=>r.json()).catch(()=>({}));
-  const qty=Math.round(s.trade_usdt/(pr.price||signal.price)*1000)/1000;
+  const qty=Math.round((s.trade_usdt*s.leverage)/(pr.price||signal.price)*1000)/1000;
   const r=await fetch('/api/order/sltp', {method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({symbol:signal.symbol,side,qty,leverage:s.leverage,sl_pct:s.sl_pct,tp_pct:s.tp_pct})
   }).then(r=>r.json());

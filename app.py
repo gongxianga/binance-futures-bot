@@ -1000,7 +1000,7 @@ def api_scan_start():
                         lev  = int(settings.get("leverage", 10))
                         sl   = float(settings.get("sl_pct", 2.0))
                         tp   = float(settings.get("tp_pct", 4.0))
-                        qty  = usdt / r["price"]
+                        qty  = (usdt * lev) / r["price"]
                         ok, res, sl_px, tp_px = engine.place_with_sltp(
                             r["symbol"], side, qty, lev, sl, tp)
                         cn = "做多" if side == "BUY" else "做空"
