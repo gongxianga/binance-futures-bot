@@ -743,6 +743,11 @@ def api_positions():
     result = []
     for p in positions:
         amt = float(p["positionAmt"])
+
+        # 过滤掉已平仓的持仓（数量为0）
+        if amt == 0:
+            continue
+
         entry = float(p["entryPrice"])
         mark = float(p["markPrice"])
         pnl = float(p["unRealizedProfit"])
