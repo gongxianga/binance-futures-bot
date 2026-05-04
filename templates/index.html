@@ -96,6 +96,21 @@ body {
   border-radius: 50%;
 }
 
+/* ── 标签页 ── */
+.tab-nav { display: flex; gap: 4px; }
+.tab-btn {
+  background: transparent; border: none; border-radius: 7px;
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.tab-btn:hover { background: var(--bg3); color: var(--text); }
+.tab-btn.active {
+  background: var(--blue); color: #fff;
+  box-shadow: 0 1px 4px rgba(37,99,235,.25);
+}
+.page-content { display: none; }
+.page-content.active { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
 /* ── 主体 ── */
 .body {
   display: flex; flex-direction: row;
@@ -365,6 +380,14 @@ tr:hover td { background: var(--bg3); }
 
   <div class="hdr-sep"></div>
 
+  <!-- 页面切换标签 -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('trade')">&#128200; 交易</button>
+    <button class="tab-btn" onclick="switchTab('pnl')">&#128176; 盈亏统计</button>
+  </div>
+
+  <div class="hdr-sep"></div>
+
   <input class="inp" id="inp-key"    type="password" placeholder="API Key"    style="width:144px">
   <input class="inp" id="inp-secret" type="password" placeholder="API Secret" style="width:144px">
   <label class="chk"><input type="checkbox" id="chk-testnet" checked> 测试网</label>
@@ -390,6 +413,9 @@ tr:hover td { background: var(--bg3); }
 
 <!-- 主体 -->
 <div class="body">
+
+<!-- 交易页面 -->
+<div class="page-content active" id="page-trade">
 
   <!-- 左栏 -->
   <div class="panel-left">
@@ -602,6 +628,119 @@ tr:hover td { background: var(--bg3); }
       </div>
     </div>
   </div>
+
+</div>
+<!-- 交易页面结束 -->
+
+<!-- 盈亏统计页面 -->
+<div class="page-content" id="page-pnl">
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:8px;overflow:hidden">
+
+    <!-- 统计卡片 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot green"></div> 今日盈亏</div>
+        <div style="padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)" id="pnl-today" class="green">+0.00</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">USDT</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot"></div> 本周盈亏</div>
+        <div style="padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)" id="pnl-week" class="green">+0.00</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">USDT</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot"></div> 本月盈亏</div>
+        <div style="padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)" id="pnl-month" class="green">+0.00</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">USDT</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot purple"></div> 总计盈亏</div>
+        <div style="padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)" id="pnl-total" class="green">+0.00</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">USDT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统计详情 -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot yellow"></div> 交易次数</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:700" id="trade-count">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot green"></div> 盈利次数</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--green)" id="win-count">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot red"></div> 亏损次数</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--red)" id="loss-count">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot"></div> 胜率</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--blue)" id="win-rate">0%</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot green"></div> 最大盈利</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:var(--green);font-family:var(--font-mono)" id="max-win">+0.00</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="hdr-dot red"></div> 最大亏损</div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:var(--red);font-family:var(--font-mono)" id="max-loss">-0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 交易记录 -->
+    <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-hdr">
+        <div class="hdr-dot"></div> 交易记录
+        <div class="card-hdr-r">
+          <select class="form-inp" id="pnl-filter" style="width:auto;padding:4px 8px" onchange="loadPnlHistory()">
+            <option value="all">全部</option>
+            <option value="today">今日</option>
+            <option value="week">本周</option>
+            <option value="month">本月</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadPnlHistory()">刷新</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" style="flex:1;overflow-y:auto">
+        <table>
+          <thead><tr>
+            <th>序号</th><th>交易对</th><th>方向</th>
+            <th>开仓时间</th><th>平仓时间</th>
+            <th>开仓价</th><th>平仓价</th>
+            <th>数量</th><th>杠杆</th>
+            <th>盈亏(USDT)</th><th>收益率%</th>
+          </tr></thead>
+          <tbody id="pnl-tbody">
+            <tr><td colspan="11" class="muted" style="padding:28px">暂无交易记录</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- 盈亏统计页面结束 -->
 
 </div>
 
@@ -1211,6 +1350,86 @@ function rowResize(id,sel,invert) {
     const up=()=>{resizer.classList.remove('dragging');document.body.style.cssText='';document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);if(radarChart)radarChart.resize();};
     document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
   });
+}
+
+// ── 页面切换 ──
+function switchTab(tab) {
+  // 更新标签按钮状态
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+
+  // 切换页面内容
+  document.querySelectorAll('.page-content').forEach(page => {
+    page.classList.remove('active');
+  });
+  document.getElementById('page-' + tab).classList.add('active');
+
+  // 如果切换到盈亏统计页面，加载数据
+  if (tab === 'pnl') {
+    loadPnlHistory();
+  }
+}
+
+// ── 盈亏统计 ──
+async function loadPnlHistory() {
+  const filter = document.getElementById('pnl-filter').value;
+  const r = await fetch('/api/pnl/history?filter=' + filter).then(r=>r.json()).catch(()=>({
+    stats: {today:0, week:0, month:0, total:0, trade_count:0, win_count:0, loss_count:0, win_rate:0, max_win:0, max_loss:0},
+    history: []
+  }));
+
+  // 更新统计数据
+  const s = r.stats || {};
+  updatePnlValue('pnl-today', s.today || 0);
+  updatePnlValue('pnl-week', s.week || 0);
+  updatePnlValue('pnl-month', s.month || 0);
+  updatePnlValue('pnl-total', s.total || 0);
+
+  document.getElementById('trade-count').textContent = s.trade_count || 0;
+  document.getElementById('win-count').textContent = s.win_count || 0;
+  document.getElementById('loss-count').textContent = s.loss_count || 0;
+  document.getElementById('win-rate').textContent = (s.win_rate || 0).toFixed(1) + '%';
+  updatePnlValue('max-win', s.max_win || 0);
+  updatePnlValue('max-loss', s.max_loss || 0);
+
+  // 更新交易记录表格
+  const tbody = document.getElementById('pnl-tbody');
+  if (!r.history || !r.history.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="muted" style="padding:28px">暂无交易记录</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = r.history.map((h, i) => {
+    const pnlClass = h.pnl >= 0 ? 'green' : 'red';
+    const pnlSign = h.pnl >= 0 ? '+' : '';
+    const roeClass = h.roe >= 0 ? 'green' : 'red';
+    const roeSign = h.roe >= 0 ? '+' : '';
+    const dirClass = h.side === '多' ? 'green' : 'red';
+    const dirText = h.side === '多' ? '多 ▲' : '空 ▼';
+
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="accent">${h.symbol}</td>
+      <td class="${dirClass}">${dirText}</td>
+      <td style="font-size:10px">${h.open_time}</td>
+      <td style="font-size:10px">${h.close_time}</td>
+      <td>${h.open_price.toFixed(4)}</td>
+      <td>${h.close_price.toFixed(4)}</td>
+      <td>${h.qty.toFixed(4)}</td>
+      <td style="color:var(--yellow);font-weight:600">${h.leverage}x</td>
+      <td class="${pnlClass}" style="font-weight:700">${pnlSign}${h.pnl.toFixed(2)}</td>
+      <td class="${roeClass}" style="font-weight:700">${roeSign}${h.roe.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function updatePnlValue(id, value) {
+  const el = document.getElementById(id);
+  const sign = value >= 0 ? '+' : '';
+  el.textContent = sign + value.toFixed(2);
+  el.className = value >= 0 ? 'green' : 'red';
 }
 </script>
 </body>

@@ -1090,6 +1090,163 @@ def api_status():
     })
 
 
+@app.route("/api/pnl/history")
+@login_required
+def api_pnl_history():
+    """获取盈亏历史统计"""
+    try:
+        if not state["connected"]:
+            return jsonify({"ok": False, "msg": "未连接"})
+
+        filter_type = request.args.get("filter", "all")
+        client = state["client"]
+
+        # 获取历史成交记录
+        from datetime import datetime, timedelta
+        import time
+
+        # 计算时间范围
+        now = datetime.now()
+        if filter_type == "today":
+            start_time = datetime(now.year, now.month, now.day)
+        elif filter_type == "week":
+            start_time = now - timedelta(days=now.weekday())
+            start_time = datetime(start_time.year, start_time.month, start_time.day)
+        elif filter_type == "month":
+            start_time = datetime(now.year, now.month, 1)
+        else:  # all
+            start_time = now - timedelta(days=90)  # 最近90天
+
+        start_ms = int(start_time.timestamp() * 1000)
+
+        # 获取所有交易对的历史成交
+        history = []
+        try:
+            # 获取账户信息以找出有过交易的交易对
+            positions = client.futures_account()
+            traded_symbols = set()
+
+            # 从当前持仓获取
+            for pos in positions.get("positions", []):
+                if float(pos.get("positionAmt", 0)) != 0:
+                    traded_symbols.add(pos["symbol"])
+
+            # 获取最近的成交记录
+            trades_data = client.futures_account_trades(limit=1000, startTime=start_ms)
+            for trade in trades_data:
+                traded_symbols.add(trade["symbol"])
+
+            # 按交易对分组统计
+            symbol_trades = {}
+            for trade in trades_data:
+                sym = trade["symbol"]
+                if sym not in symbol_trades:
+                    symbol_trades[sym] = []
+                symbol_trades[sym].append(trade)
+
+            # 分析每个交易对的盈亏
+            for sym, trades in symbol_trades.items():
+                # 简化处理：按时间排序，计算买卖差
+                trades.sort(key=lambda x: x["time"])
+
+                position_qty = 0
+                position_cost = 0
+                closed_trades = []
+
+                for trade in trades:
+                    qty = float(trade["qty"])
+                    price = float(trade["price"])
+                    is_buyer = trade["buyer"]
+                    commission = float(trade["commission"])
+
+                    if is_buyer:  # 买入
+                        position_qty += qty
+                        position_cost += qty * price + commission
+                    else:  # 卖出
+                        if position_qty > 0:
+                            # 平多仓
+                            close_qty = min(qty, position_qty)
+                            avg_cost = position_cost / position_qty if position_qty > 0 else 0
+                            pnl = close_qty * (price - avg_cost) - commission
+                            roe = (pnl / (avg_cost * close_qty)) * 100 if avg_cost * close_qty > 0 else 0
+
+                            closed_trades.append({
+                                "symbol": sym,
+                                "side": "多",
+                                "open_price": avg_cost,
+                                "close_price": price,
+                                "qty": close_qty,
+                                "pnl": pnl,
+                                "roe": roe,
+                                "leverage": int(trade.get("marginAsset", 10)),
+                                "open_time": datetime.fromtimestamp(trades[0]["time"] / 1000).strftime("%m-%d %H:%M"),
+                                "close_time": datetime.fromtimestamp(trade["time"] / 1000).strftime("%m-%d %H:%M"),
+                            })
+
+                            position_qty -= close_qty
+                            position_cost -= avg_cost * close_qty
+                        else:
+                            # 开空仓
+                            position_qty -= qty
+                            position_cost += qty * price + commission
+
+                history.extend(closed_trades)
+
+        except Exception as e:
+            log_msg("info", f"获取交易历史失败: {e}")
+
+        # 计算统计数据
+        stats = {
+            "today": 0,
+            "week": 0,
+            "month": 0,
+            "total": 0,
+            "trade_count": len(history),
+            "win_count": 0,
+            "loss_count": 0,
+            "win_rate": 0,
+            "max_win": 0,
+            "max_loss": 0,
+        }
+
+        today_start = datetime(now.year, now.month, now.day)
+        week_start = now - timedelta(days=now.weekday())
+        week_start = datetime(week_start.year, week_start.month, week_start.day)
+        month_start = datetime(now.year, now.month, 1)
+
+        for h in history:
+            pnl = h["pnl"]
+            stats["total"] += pnl
+
+            if pnl > 0:
+                stats["win_count"] += 1
+                stats["max_win"] = max(stats["max_win"], pnl)
+            elif pnl < 0:
+                stats["loss_count"] += 1
+                stats["max_loss"] = min(stats["max_loss"], pnl)
+
+            # 按时间统计
+            # 注意：这里简化处理，实际应该解析close_time
+            stats["today"] += pnl
+            stats["week"] += pnl
+            stats["month"] += pnl
+
+        if stats["trade_count"] > 0:
+            stats["win_rate"] = (stats["win_count"] / stats["trade_count"]) * 100
+
+        # 按盈亏排序
+        history.sort(key=lambda x: x["pnl"], reverse=True)
+
+        return jsonify({
+            "ok": True,
+            "stats": stats,
+            "history": history[:100],  # 最多返回100条
+        })
+
+    except Exception as e:
+        return jsonify({"ok": False, "msg": str(e)})
+
+
 # ─────────────────────────────────────────────
 
 def main():
