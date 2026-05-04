@@ -1110,8 +1110,9 @@ async function loadLog() {
   const r=await fetch('/api/log').then(r=>r.json()).catch(()=>({log:[]}));
   const box=document.getElementById('log-box');
   if (!r.log?.length) return;
-  box.innerHTML=r.log.map(l=>'<div class="log-entry"><span class="ts">['+l.ts+']</span><span class="'+l.level+'">'+l.msg+'</span></div>').join('');
-  box.scrollTop=box.scrollHeight;
+  // 反转日志顺序，最新的显示在顶部
+  box.innerHTML=r.log.slice().reverse().map(l=>'<div class="log-entry"><span class="ts">['+l.ts+']</span><span class="'+l.level+'">'+l.msg+'</span></div>').join('');
+  // 保持在顶部，不滚动到底部
 }
 async function clearLog() {
   await fetch('/api/log/clear', {method:'POST'}).catch(()=>{});
