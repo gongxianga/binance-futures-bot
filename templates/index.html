@@ -614,15 +614,17 @@ let signalMap   = {};
 let scanRunning = false;
 let posSort     = { by: 'pnl', order: 'desc' };
 let expandedPos = new Set(); // 记录展开的持仓
+let logUserScrolling = false; // 记录用户是否在查看日志
 
 window.addEventListener('load', () => {
   loadCurrentUser(); initChart(); loadTickers(); loadStatus();
   loadLog(); loadSavedConfig();
-  setInterval(autoRefresh,    5000);
-  setInterval(loadLog,        5000);  // 每5秒自动刷新日志
+  setInterval(autoRefresh,    3000);  // 改为3秒刷新持仓和账户
+  setInterval(smartLoadLog,   5000);  // 智能刷新日志
   setInterval(loadScanStatus, 1000);
   setInterval(loadTickers,   60000);
   initResizers();
+  initLogScrollDetection();
 });
 
 async function loadCurrentUser() {
@@ -664,7 +666,15 @@ function setConnected(ok) {
   el.className   = 'status-badge '+(ok?'ok':'err');
   el.textContent = ok ? '● 已连接' : '● 未连接';
 }
-async function autoRefresh() { await loadAccount(); await loadPositions(); }
+async function autoRefresh() {
+  try {
+    await loadAccount();
+    await loadPositions();
+    console.log('[自动刷新] 账户和持仓已更新', new Date().toLocaleTimeString());
+  } catch(e) {
+    console.error('[自动刷新] 失败:', e);
+  }
+}
 async function loadAccount() {
   const r = await fetch('/api/account').then(r=>r.json()).catch(()=>({}));
   if (!r.ok) return;
@@ -682,14 +692,19 @@ async function loadPositions() {
   });
 
   const url = `/api/positions?sort=${posSort.by}&order=${posSort.order}`;
-  const r = await fetch(url).then(r=>r.json()).catch(()=>({positions:[]}));
+  const r = await fetch(url).then(r=>r.json()).catch(e=>{
+    console.error('[持仓] 获取失败:', e);
+    return {positions:[]};
+  });
   const tbody = document.getElementById('pos-tbody');
-  if (!r.positions.length) {
+  if (!r.positions || !r.positions.length) {
     tbody.innerHTML='<tr><td colspan="11" class="muted" style="padding:16px">暂无持仓</td></tr>';
     document.getElementById('btn-batch-close').style.display = 'none';
     document.getElementById('pos-check-all').checked = false;
+    console.log('[持仓] 当前无持仓');
     return;
   }
+  console.log('[持仓] 已加载', r.positions.length, '个持仓');
 
   tbody.innerHTML = r.positions.map((p,i)=>{
     const rowId = 'pos-row-'+i;
@@ -1106,6 +1121,38 @@ function renderChart() {
     series:[{type:'scatter',data,markPoint:{data:labels,symbol:'none',animation:false}}],
   },true);
 }
+// 智能刷新日志：只在用户没有滚动查看时才自动刷新
+async function smartLoadLog() {
+  if (!logUserScrolling) {
+    await loadLog();
+  }
+}
+// 初始化日志滚动检测
+function initLogScrollDetection() {
+  const box = document.getElementById('log-box');
+  let scrollTimer;
+  box.addEventListener('scroll', () => {
+    logUserScrolling = true;
+    clearTimeout(scrollTimer);
+    // 2秒后恢复自动刷新
+    scrollTimer = setTimeout(() => {
+      // 如果滚动到顶部，恢复自动刷新
+      if (box.scrollTop < 10) {
+        logUserScrolling = false;
+      }
+    }, 2000);
+  });
+  // 鼠标进入日志区域时暂停刷新
+  box.addEventListener('mouseenter', () => {
+    logUserScrolling = true;
+  });
+  // 鼠标离开且滚动到顶部时恢复刷新
+  box.addEventListener('mouseleave', () => {
+    if (box.scrollTop < 10) {
+      logUserScrolling = false;
+    }
+  });
+}
 async function loadLog() {
   const r=await fetch('/api/log').then(r=>r.json()).catch(()=>({log:[]}));
   const box=document.getElementById('log-box');
@@ -1117,6 +1164,7 @@ async function loadLog() {
 async function clearLog() {
   await fetch('/api/log/clear', {method:'POST'}).catch(()=>{});
   document.getElementById('log-box').innerHTML='';
+  logUserScrolling = false; // 清空后恢复自动刷新
 }
 let toastTimer;
 function toast(msg,type) {
