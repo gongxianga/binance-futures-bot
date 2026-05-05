@@ -546,6 +546,7 @@ tr:hover td { background: var(--bg3); }
             <div class="scan-ctrl">
               <button class="btn btn-primary btn-sm" id="btn-scan-start" onclick="startScan()">&#9654; 开始扫描</button>
               <button class="btn btn-ghost btn-sm"   id="btn-scan-stop"  onclick="stopScan()" disabled>&#9632; 停止</button>
+              <button class="btn btn-ghost btn-sm" onclick="saveTradeSettings()" style="margin-left:8px;border-color:var(--green);color:var(--green)">&#128190; 保存设置</button>
               <div class="progress-wrap" id="scan-progress-wrap" style="display:none">
                 <div class="progress-meta">
                   <span id="scan-progress-text">扫描中...</span>
@@ -757,7 +758,7 @@ let logUserScrolling = false; // 记录用户是否在查看日志
 
 window.addEventListener('load', () => {
   loadCurrentUser(); initChart(); loadTickers(); loadStatus();
-  loadLog(); loadSavedConfig();
+  loadLog(); loadSavedConfig(); loadTradeSettings();
   setInterval(autoRefresh,    3000);  // 改为3秒刷新持仓和账户
   setInterval(smartLoadLog,   5000);  // 智能刷新日志
   setInterval(loadScanStatus, 1000);
@@ -1076,6 +1077,21 @@ function getScanSettings() {
     tp_pct:     parseFloat(document.getElementById('s-tp').value),
     auto_trade: document.getElementById('s-mode').value==='auto',
   };
+}
+async function loadTradeSettings() {
+  try {
+    const s = await fetch('/api/trade-settings').then(r=>r.json());
+    document.getElementById('s-minscore').value = s.min_score  ?? 2;
+    document.getElementById('s-usdt').value     = s.trade_usdt ?? 100;
+    document.getElementById('s-lev').value      = s.leverage   ?? 10;
+    document.getElementById('s-sl').value       = s.sl_pct     ?? 2.0;
+    document.getElementById('s-tp').value       = s.tp_pct     ?? 4.0;
+    document.getElementById('s-mode').value     = s.auto_trade ? 'auto' : 'manual';
+  } catch(e) {}
+}
+async function saveTradeSettings() {
+  const r = await fetch('/api/trade-settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(getScanSettings())}).then(r=>r.json());
+  toast(r.ok ? '设置已保存' : ('保存失败: '+r.msg), r.ok?'ok':'err');
 }
 function setScanActive(active) {
   document.getElementById('btn-scan-start').disabled = active;

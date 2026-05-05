@@ -63,8 +63,36 @@ state = {
 }
 
 engine = None
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+CONFIG_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trade_settings.json")
 _lock = threading.Lock()
+
+DEFAULT_TRADE_SETTINGS = {
+    "min_score":  2,
+    "trade_usdt": 100,
+    "leverage":   10,
+    "sl_pct":     2.0,
+    "tp_pct":     4.0,
+    "auto_trade": False,
+}
+
+def load_trade_settings():
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE) as f:
+                saved = json.load(f)
+            s = dict(DEFAULT_TRADE_SETTINGS)
+            s.update(saved)
+            return s
+        except Exception:
+            pass
+    return dict(DEFAULT_TRADE_SETTINGS)
+
+def save_trade_settings(data):
+    s = dict(DEFAULT_TRADE_SETTINGS)
+    s.update({k: v for k, v in data.items() if k in DEFAULT_TRADE_SETTINGS})
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(s, f, indent=2)
 
 
 def add_log(msg, level="info"):
@@ -1055,6 +1083,23 @@ def api_scan_stop():
     state["scan_running"] = False
     add_log("策略扫描已停止", "warn")
     return jsonify({"ok": True})
+
+
+@app.route("/api/trade-settings", methods=["GET"])
+@login_required
+def api_trade_settings_get():
+    return jsonify(load_trade_settings())
+
+
+@app.route("/api/trade-settings", methods=["POST"])
+@login_required
+def api_trade_settings_save():
+    data = request.json or {}
+    try:
+        save_trade_settings(data)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "msg": str(e)})
 
 
 @app.route("/api/scan/status")
