@@ -535,6 +535,10 @@ tr:hover td { background: var(--bg3); }
                 <label>止盈 %</label>
                 <input class="form-inp" id="s-tp" value="4.0">
               </div>
+              <div class="scan-field">
+                <label>扫描间隔 (分钟)</label>
+                <input class="form-inp" id="s-interval" value="20" type="number" min="1">
+              </div>
               <div class="scan-field" style="display:flex;flex-direction:column;justify-content:flex-end">
                 <label>执行模式</label>
                 <select class="form-inp" id="s-mode">
@@ -1070,22 +1074,24 @@ async function cancelOrders() {
 }
 function getScanSettings() {
   return {
-    min_score:  parseInt(document.getElementById('s-minscore').value),
-    trade_usdt: parseFloat(document.getElementById('s-usdt').value),
-    leverage:   parseInt(document.getElementById('s-lev').value),
-    sl_pct:     parseFloat(document.getElementById('s-sl').value),
-    tp_pct:     parseFloat(document.getElementById('s-tp').value),
-    auto_trade: document.getElementById('s-mode').value==='auto',
+    min_score:     parseInt(document.getElementById('s-minscore').value),
+    trade_usdt:    parseFloat(document.getElementById('s-usdt').value),
+    leverage:      parseInt(document.getElementById('s-lev').value),
+    sl_pct:        parseFloat(document.getElementById('s-sl').value),
+    tp_pct:        parseFloat(document.getElementById('s-tp').value),
+    scan_interval: parseInt(document.getElementById('s-interval').value) || 20,
+    auto_trade:    document.getElementById('s-mode').value==='auto',
   };
 }
 async function loadTradeSettings() {
   try {
     const s = await fetch('/api/trade-settings').then(r=>r.json());
-    document.getElementById('s-minscore').value = s.min_score  ?? 2;
-    document.getElementById('s-usdt').value     = s.trade_usdt ?? 100;
-    document.getElementById('s-lev').value      = s.leverage   ?? 10;
-    document.getElementById('s-sl').value       = s.sl_pct     ?? 2.0;
-    document.getElementById('s-tp').value       = s.tp_pct     ?? 4.0;
+    document.getElementById('s-minscore').value = s.min_score     ?? 2;
+    document.getElementById('s-usdt').value     = s.trade_usdt   ?? 100;
+    document.getElementById('s-lev').value      = s.leverage     ?? 10;
+    document.getElementById('s-sl').value       = s.sl_pct       ?? 2.0;
+    document.getElementById('s-tp').value       = s.tp_pct       ?? 4.0;
+    document.getElementById('s-interval').value = s.scan_interval ?? 20;
     document.getElementById('s-mode').value     = s.auto_trade ? 'auto' : 'manual';
   } catch(e) {}
 }

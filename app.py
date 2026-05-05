@@ -68,12 +68,13 @@ SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trade_
 _lock = threading.Lock()
 
 DEFAULT_TRADE_SETTINGS = {
-    "min_score":  2,
-    "trade_usdt": 100,
-    "leverage":   10,
-    "sl_pct":     2.0,
-    "tp_pct":     4.0,
-    "auto_trade": False,
+    "min_score":    2,
+    "trade_usdt":   100,
+    "leverage":     10,
+    "sl_pct":       2.0,
+    "tp_pct":       4.0,
+    "auto_trade":   False,
+    "scan_interval": 20,
 }
 
 def load_trade_settings():
@@ -998,7 +999,8 @@ def api_scan_start():
     settings = request.json or {}
     state["scan_running"] = True
     state["next_scan_at"] = time.time()
-    add_log("策略扫描已启动（每20分钟一轮，7策略混合，前300个交易对）", "ok")
+    scan_interval_min = int(settings.get("scan_interval", 20))
+    add_log(f"策略扫描已启动（每{scan_interval_min}分钟一轮，7策略混合，前300个交易对）", "ok")
 
     def _loop():
         cycle = 0
@@ -1069,9 +1071,10 @@ def api_scan_start():
                 time.sleep(5)
                 continue
 
-            # 每20分钟扫描一轮
-            state["next_scan_at"] = time.time() + 1200
-            time.sleep(1200)
+            # 按设置的间隔扫描
+            interval_sec = scan_interval_min * 60
+            state["next_scan_at"] = time.time() + interval_sec
+            time.sleep(interval_sec)
 
     threading.Thread(target=_loop, daemon=True).start()
     return jsonify({"ok": True})
