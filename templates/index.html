@@ -1161,6 +1161,7 @@ function renderSignals(results) {
       '<span class="sig-tag '+tc(d.ema&&d.ema.cls)+'">EMA '+(d.ema&&d.ema.text||'--')+'</span>',
       '<span class="sig-tag '+tc(d.sqz&&d.sqz.cls)+'">挤压 '+(d.sqz&&d.sqz.text||'--')+'</span>',
       '<span class="sig-tag '+tc(d.fr &&d.fr.cls) +'">费率 '+(d.fr &&d.fr.text ||'--')+'</span>',
+      '<span class="sig-tag '+tc(d.osd&&d.osd.cls)+'">超跌 '+(d.osd&&d.osd.text||'--')+'</span>',
     ].join('');
     const safeR=JSON.stringify(r).replace(/"/g,'&quot;');
     return '<div class="signal-card '+(isLong?'long':'short')+'">' +

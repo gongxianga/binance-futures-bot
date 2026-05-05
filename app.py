@@ -527,6 +527,25 @@ class SignalEngine:
         else:
             details["fr"] = {"text": "--", "cls": "muted"}
 
+        # 8. 超跌反弹（3条件满足≥2条触发）
+        # 条件A: RSI深度超卖 < 25
+        cond_a = rsi < 25
+        # 条件B: 近20根K线从最高点跌幅 > 15%
+        recent_high = max(closes[-20:]) if len(closes) >= 20 else max(closes)
+        cond_b = (recent_high - cur_price) / recent_high > 0.15 if recent_high > 0 else False
+        # 条件C: 价格跌破布林下轨
+        cond_c = (upper is not None and lower is not None and cur_price < lower)
+        hit = sum([cond_a, cond_b, cond_c])
+        if hit >= 2:
+            long_s += 1
+            flags = []
+            if cond_a: flags.append(f"RSI{rsi:.0f}")
+            if cond_b: flags.append(f"跌{((recent_high-cur_price)/recent_high*100):.0f}%")
+            if cond_c: flags.append("破下轨")
+            details["osd"] = {"text": "超跌↑" + "(" + "/".join(flags) + ")", "cls": "green"}
+        else:
+            details["osd"] = {"text": "--", "cls": "muted"}
+
         score = max(long_s, short_s)
         if score == 0:
             return None
