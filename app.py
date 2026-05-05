@@ -217,12 +217,14 @@ class FuturesEngine:
                 symbol=symbol, side=side, type="MARKET", quantity=qty)
             price = float(order.get("avgPrice") or 0) or self.get_price(symbol) or 0
             close_side = "SELL" if side == "BUY" else "BUY"
+            # 止损/止盈基于本金百分比：价格移动幅度 = 百分比 / 杠杆倍数
+            lev_f = float(lev) if lev else 1.0
             if side == "BUY":
-                sl_px = price * (1 - sl_pct / 100)
-                tp_px = price * (1 + tp_pct / 100)
+                sl_px = price * (1 - sl_pct / (100 * lev_f))
+                tp_px = price * (1 + tp_pct / (100 * lev_f))
             else:
-                sl_px = price * (1 + sl_pct / 100)
-                tp_px = price * (1 - tp_pct / 100)
+                sl_px = price * (1 + sl_pct / (100 * lev_f))
+                tp_px = price * (1 - tp_pct / (100 * lev_f))
             sl_px_str = self._fmt(sl_px, tick)
             tp_px_str = self._fmt(tp_px, tick)
             sl_px = float(sl_px_str)
