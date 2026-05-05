@@ -403,6 +403,51 @@ class SignalEngine:
             trs.append(max(h - l, abs(h - pc), abs(l - pc)))
         return sum(trs[-period:]) / period
 
+    _news_cache: dict = {}
+    _news_cache_ts: float = 0
+
+    # 利多关键词
+    _POS_WORDS = ["surge", "rally", "bullish", "pump", "breakout", "launch",
+                  "partnership", "upgrade", "listing", "all-time high", "ath",
+                  "adoption", "integration", "bullrun", "moonshot", "soar"]
+    # 利空关键词
+    _NEG_WORDS = ["crash", "dump", "bearish", "hack", "ban", "lawsuit",
+                  "delist", "fraud", "warning", "plunge", "collapse",
+                  "exploit", "stolen", "scam", "ponzi", "regulation crackdown"]
+
+    def _fetch_news(self):
+        """抓取最新加密货币新闻，提取币种情绪，缓存30分钟"""
+        now = time.time()
+        if now - self._news_cache_ts < 1800 and self._news_cache:
+            return self._news_cache
+        try:
+            url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=100&sortOrder=latest"
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "python-requests/2.28")
+            req.add_header("Accept", "application/json")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                items = json.loads(r.read()).get("Data", [])
+            mentions = {}
+            for item in items:
+                cats  = item.get("categories", "")
+                title = item.get("title", "").lower()
+                sentiment = 0
+                for w in self._POS_WORDS:
+                    if w in title: sentiment += 1
+                for w in self._NEG_WORDS:
+                    if w in title: sentiment -= 1
+                for cat in cats.split("|"):
+                    sym = cat.strip().upper() + "USDT"
+                    if sym not in mentions or abs(sentiment) > abs(mentions[sym][0]):
+                        mentions[sym] = (sentiment, item.get("title", "")[:80])
+            self.__class__._news_cache    = mentions
+            self.__class__._news_cache_ts = now
+            add_log(f"[新闻] 已更新，覆盖 {len(mentions)} 个币种", "info")
+            return mentions
+        except Exception as e:
+            add_log(f"[新闻] 抓取失败: {e}", "warn")
+            return self._news_cache  # 返回旧缓存
+
     def _funding_rate(self, symbol):
         """获取OKX资金费率，失败返回None"""
         try:
@@ -527,7 +572,20 @@ class SignalEngine:
         else:
             details["fr"] = {"text": "--", "cls": "muted"}
 
-        # 8. 超跌反弹（3条件满足≥2条触发）
+        # 8. 新闻热点情绪
+        news = self._fetch_news()
+        if symbol in news:
+            sentiment, headline = news[symbol]
+            if sentiment > 0:
+                long_s  += 1; details["news"] = {"text": f"利多", "cls": "green", "tip": headline}
+            elif sentiment < 0:
+                short_s += 1; details["news"] = {"text": f"利空", "cls": "red",   "tip": headline}
+            else:
+                details["news"] = {"text": "热点", "cls": "muted", "tip": headline}
+        else:
+            details["news"] = {"text": "--", "cls": "muted"}
+
+        # 9. 超跌反弹（3条件满足≥2条触发）
         # 条件A: RSI深度超卖 < 25
         cond_a = rsi < 25
         # 条件B: 近20根K线从最高点跌幅 > 15%
