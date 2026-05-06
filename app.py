@@ -313,6 +313,11 @@ def get_tickers():
             chg_pct  = (last - open24h) / open24h * 100
             vol_usdt = float(d.get("volCcy24h") or 0)
             symbol   = d["instId"].replace("-USDT-SWAP", "") + "USDT"
+
+            # 过滤掉24小时交易量低于1000万USDT的币种
+            if vol_usdt < 10_000_000:
+                continue
+
             result.append({
                 "symbol":             symbol,
                 "priceChangePercent": str(round(chg_pct, 4)),
@@ -328,7 +333,8 @@ def get_tickers():
     if engine and state["connected"]:
         try:
             data = engine.client.futures_ticker()
-            return sorted([d for d in data if d["symbol"].endswith("USDT")],
+            # 过滤：只保留24小时交易量 >= 1000万USDT 的币种
+            return sorted([d for d in data if d["symbol"].endswith("USDT") and float(d.get("quoteVolume", 0)) >= 10_000_000],
                           key=lambda x: float(x["quoteVolume"]), reverse=True)
         except Exception as e:
             add_log(f"币安行情也失败: {e}", "warn")
